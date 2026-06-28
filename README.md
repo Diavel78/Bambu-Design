@@ -117,6 +117,36 @@ python3 src/generate_sonics_charm.py
 
 ---
 
+## Cheer bow charms (with names!)
+
+A multi-color cheer bow that clips to a backpack — **white ribbon, red text,
+black trim**, with a **red center knot** and a **fully-printed snap clip** on
+top. Layout: gym name on the left loop, team + athlete name on the right.
+
+![bow preview](renders/bow_eden.png)
+
+- Files: `models/bow_<name>/` (same structure as the charms: `_plate` = black,
+  `_outline` = white, `_text` = red, plus `_combined.stl` and `.step`).
+- Size: ~90 mm wide. Multi-color print exactly like the charms.
+
+### Make one per girl — change the name in one command
+```bash
+python3 src/generate_bow.py --name Eden
+python3 src/generate_bow.py --name Harper
+python3 src/generate_bow.py --name Aubrey --team XOXO --gym Sonics
+```
+Each run creates a new `models/bow_<name>/` folder and a preview. Just send me
+the roster and I'll batch out all 12 at once.
+
+### ⚠ About the snap clip
+It's a fully-printed carabiner-style clip — **experimental**, so expect to
+test-print it and maybe tweak. Print in **PLA or (better) PETG** for a springier
+gate. If the gate is too stiff or too loose, tell me and I'll adjust
+`CLIP_GATE_W` / clearances. Print **flat** (as oriented) so the gate flexes along
+the layer lines.
+
+---
+
 ## Credits / license
 
 - Font: **UnifrakturCook** by Peter Wiegel / GFOS, licensed under the
