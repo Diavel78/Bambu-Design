@@ -92,14 +92,7 @@ def build(name, team, gym):
     pieces = [loop_l, loop_r, knot, parts["tail_l"], parts["tail_r"]]
 
     # one solid black plate (bridge the thin separators between pieces)
-    silhouette = unary_union(pieces).buffer(BRIDGE).buffer(-BRIDGE + 0.2)
-
-    # snap clip on a stem rising from the knot, up between the loop tops
-    loop_top = max(loop_l.bounds[3], loop_r.bounds[3])
-    clip_y = loop_top + CLIP_ROUT + 1.0
-    stem = round_poly(box(-STEM_W / 2, knot.centroid.y, STEM_W / 2, clip_y), 2.0)
-    clip = stranslate(carabiner(), 0, clip_y)
-    plate_poly = unary_union([silhouette, stem, clip])
+    plate_poly = unary_union(pieces).buffer(BRIDGE).buffer(-BRIDGE + 0.2)
 
     # ---- text -------------------------------------------------------------
     lc, rc = loop_l.centroid, loop_r.centroid
