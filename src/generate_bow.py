@@ -2,18 +2,18 @@
 """
 Generate a multi-color cheer-bow charm with a printed snap clip.
 
+Real cheer-bow shape: two puffy loops splaying UP and out from a small
+center knot, with two tails hanging DOWN with fishtail (V-notch) ends.
+
 Layout:
   LEFT loop  : gym name      (default "Sonics", blackletter)
-  RIGHT loop : team name     (default "XOXO")  over  athlete name (default "Eden")
-Colors: white ribbon faces, red text, black trim/outline/knot/tails.
+  RIGHT loop : team name     (default "XOXO") over athlete name (default "Eden")
+Colors: white ribbon faces, red text + red center knot, black trim/tails.
 Attachment: a flat, fully-printed carabiner-style snap clip at the top.
 
 Change the name fast:
     python3 generate_bow.py --name Eden
     python3 generate_bow.py --name Harper --team XOXO --gym Sonics
-Outputs go to ../models/bow_<name>/ and a preview to ../renders/.
-
-Everything is parametric -- tweak CONFIG and re-run.
 """
 
 import os
@@ -33,27 +33,38 @@ FONT_NAME  = os.path.join(HERE, "..", "fonts", "DejaVuSans-Bold.ttf")
 # --------------------------------------------------------------------------- #
 # CONFIG (mm)
 # --------------------------------------------------------------------------- #
-BOW_W      = 90.0     # overall bow width target
+TARGET_W   = 92.0     # final overall bow width (scaled at the end)
 
-KNOT_W     = 15.0     # center knot width
-LOOP_OUT_H = 52.0     # loop height at the outer edge
-LOOP_IN_H  = 34.0     # loop height where it meets the knot
-LOOP_ROUND = 6.0      # corner rounding of the loops
-TAIL_LEN   = 26.0
-TAIL_W     = 16.0
+# loops (modeled as tilted ellipses that meet only at the center knot)
+LOOP_A     = 22.0     # ellipse half-width
+LOOP_B     = 27.0     # ellipse half-height
+LOOP_CX    = 21.0     # how far out each loop center sits (apart -> two puffs)
+LOOP_CY    = 16.0     # how far up each loop center sits
+LOOP_TILT  = 30.0     # degrees each loop splays up-and-out
 
-TRIM        = 2.2     # black border width around white faces
+KNOT_W     = 16.0     # small center cinch
+KNOT_TOP   = 9.0
+KNOT_BOT   = -9.0
+
+TAIL_LEN   = 42.0
+TAIL_W     = 18.0
+TAIL_SPLAY = 13.0     # degrees the tails splay apart
+TAIL_X     = 9.0      # tail center offset from middle
+TAIL_NOTCH = 9.0      # depth of the fishtail V
+
+TRIM        = 2.4     # black border around white faces
 PLATE_H     = 2.6
 WHITE_RAISE = 0.8
 TEXT_RAISE  = 1.2
-TEXT_MOAT   = 0.7     # thin black gap around red letters
+TEXT_MOAT   = 0.7
 
-# carabiner snap clip
+# carabiner snap clip + stem
 CLIP_ROUT   = 9.5
 CLIP_RIN    = 5.8
 CLIP_GATE_W = 1.8
-CLIP_GAP_A  = (58.0, 122.0)   # angular opening (deg) where ring is removed
-CLIP_GATE_A = (54.0, 120.0)   # gate span (anchored < opening, free tip inside)
+CLIP_GAP_A  = (58.0, 122.0)
+CLIP_GATE_A = (54.0, 120.0)
+STEM_W      = 6.0
 
 COLORS = g.COLORS
 
@@ -65,50 +76,46 @@ def round_poly(poly, r):
     return poly.buffer(r, join_style=1).buffer(-r, join_style=1)
 
 
-def fit_text(text, font_path, target_w):
-    """Return text as a shapely polygon scaled to target_w, centered at origin."""
+def fit_text(text, font_path, target_w, max_h=None):
     raw = g.text_to_polygon(text, font_path)
     minx, miny, maxx, maxy = raw.bounds
     s = target_w / (maxx - minx)
+    if max_h and (maxy - miny) * s > max_h:
+        s = max_h / (maxy - miny)
     p = sscale(raw, xfact=s, yfact=s, origin=(0, 0))
     minx, miny, maxx, maxy = p.bounds
     return stranslate(p, -(minx + maxx) / 2.0, -(miny + maxy) / 2.0)
 
 
+def ellipse(a, b, n=72):
+    c = Point(0, 0).buffer(1.0, resolution=n // 4)
+    return sscale(c, xfact=a, yfact=b, origin=(0, 0))
+
+
 def loop_shape(sign):
-    """A ribbon loop fanning outward. sign=-1 left, +1 right."""
-    inner_x = sign * (KNOT_W / 2 - 1.0)        # slight overlap into knot
-    outer_x = sign * (BOW_W / 2)
-    pts = [(inner_x,  LOOP_IN_H / 2),
-           (outer_x,  LOOP_OUT_H / 2),
-           (outer_x, -LOOP_OUT_H / 2),
-           (inner_x, -LOOP_IN_H / 2)]
-    return round_poly(Polygon(pts), LOOP_ROUND)
+    el = ellipse(LOOP_A, LOOP_B)
+    el = srot(el, -sign * LOOP_TILT, origin=(0, 0))   # splay up-and-out
+    return stranslate(el, sign * LOOP_CX, LOOP_CY)
 
 
 def tail_shape(sign):
-    """A fishtail ribbon tail hanging down and out from the knot."""
     w = TAIL_W
-    top_y = -LOOP_IN_H / 2 + 4
     rect = box(-w / 2, -TAIL_LEN, w / 2, 0)
     notch = Polygon([(-w / 2, -TAIL_LEN), (w / 2, -TAIL_LEN),
-                     (0, -TAIL_LEN + 7)])          # V cut for fishtail
-    tail = round_poly(rect.difference(notch), 2.0)
-    tail = srot(tail, sign * 18, origin=(0, 0))     # splay outward
-    return stranslate(tail, sign * (KNOT_W / 2 - 2), top_y)
+                     (0, -TAIL_LEN + TAIL_NOTCH)])
+    tail = round_poly(rect.difference(notch), 2.5)
+    tail = srot(tail, sign * TAIL_SPLAY, origin=(0, 0))
+    return stranslate(tail, sign * TAIL_X, -4)
 
 
 def carabiner():
-    """Flat snap clip: open ring + cantilever gate, centered at origin."""
     ring = Point(0, 0).buffer(CLIP_ROUT).difference(Point(0, 0).buffer(CLIP_RIN))
-    # remove the top arc to create the opening
     a0, a1 = map(math.radians, CLIP_GAP_A)
     wedge = Polygon([(0, 0)] +
                     [(math.cos(a0 + (a1 - a0) * t / 24) * (CLIP_ROUT + 1),
                       math.sin(a0 + (a1 - a0) * t / 24) * (CLIP_ROUT + 1))
                      for t in range(25)])
     ring = ring.difference(wedge)
-    # gate: an arc bar at mid radius, anchored before the opening, free tip inside
     rg = (CLIP_ROUT + CLIP_RIN) / 2
     g0, g1 = map(math.radians, CLIP_GATE_A)
     arc = LineString([(math.cos(g0 + (g1 - g0) * t / 40) * rg,
@@ -121,47 +128,48 @@ def carabiner():
 def build(name, team, gym):
     left  = loop_shape(-1)
     right = loop_shape(+1)
-    knot  = round_poly(box(-KNOT_W / 2, -LOOP_OUT_H * 0.40,
-                            KNOT_W / 2,  LOOP_OUT_H * 0.40), 4.0)
+    knot  = round_poly(box(-KNOT_W / 2, KNOT_BOT, KNOT_W / 2, KNOT_TOP), 5.0)
     tails = unary_union([tail_shape(-1), tail_shape(+1)])
 
-    # clip sits above the knot
-    knot_top = LOOP_OUT_H * 0.40
-    clip = stranslate(carabiner(), 0, knot_top + CLIP_ROUT - 3.0)
+    # clip on a short stem rising from the top of the loops
+    loop_top = max(left.bounds[3], right.bounds[3])
+    clip_y = loop_top + CLIP_ROUT - 2.0
+    stem = round_poly(box(-STEM_W / 2, LOOP_CY, STEM_W / 2, clip_y), 2.0)
+    clip = stranslate(carabiner(), 0, clip_y)
 
-    plate_poly = unary_union([left, right, knot, tails, clip])
+    plate_poly = unary_union([left, right, knot, tails, stem, clip])
 
-    # white faces = each loop, inset by TRIM
-    panel_l = left.buffer(-TRIM)
-    panel_r = right.buffer(-TRIM)
-
-    # text -------------------------------------------------------------------
-    lc_x = (KNOT_W / 2 + BOW_W / 2) / 2 * -1   # left loop center x
-    rc_x = (KNOT_W / 2 + BOW_W / 2) / 2        #
-    loop_text_w = (BOW_W / 2 - KNOT_W / 2) * 0.62
-
-    t_sonics = stranslate(fit_text(gym, FONT_BLACK, loop_text_w * 1.05), lc_x, 0)
-
-    t_team = fit_text(team, FONT_NAME, loop_text_w * 0.85)
-    t_name = fit_text(name, FONT_NAME, loop_text_w * 0.95)
-    # cap name height so long names don't get huge
-    nb = t_name.bounds
-    if (nb[3] - nb[1]) > 11:
-        s = 11 / (nb[3] - nb[1])
-        t_name = sscale(t_name, xfact=s, yfact=s, origin=(0, 0))
-    t_team = stranslate(t_team, rc_x,  9)
-    t_name = stranslate(t_name, rc_x, -8)
-
+    # ---- text -------------------------------------------------------------
+    # anchors placed in the meat of each loop puff, clear of the knot
+    tw = LOOP_A * 1.1
+    LX, RX = -25.0, 27.0
+    t_sonics = stranslate(fit_text(gym, FONT_BLACK, tw, max_h=14), LX, 7)
+    t_team   = stranslate(fit_text(team, FONT_NAME, tw * 0.80, max_h=9), RX, 14)
+    t_name   = stranslate(fit_text(name, FONT_NAME, tw, max_h=10), RX, 1)
     text_all = unary_union([t_sonics, t_team, t_name])
 
-    # red center knot face (raised), inset for a black trim border
+    # red center knot face
     knot_face = knot.buffer(-TRIM)
     red_all = unary_union([text_all, knot_face])
 
-    # white loop faces: inset loops, minus the red moat, minus the knot region
+    # white loop faces: inset loops minus the red moat and the knot
+    panel = unary_union([left.buffer(-TRIM), right.buffer(-TRIM)])
     moat = text_all.buffer(TEXT_MOAT)
-    white_all = (unary_union([panel_l, panel_r])
-                 .difference(moat).difference(knot.buffer(0.6)))
+    white_all = panel.difference(moat).difference(knot.buffer(0.6))
+
+    # ---- scale whole design to TARGET_W, recenter ------------------------
+    bb = plate_poly.bounds
+    s = TARGET_W / (bb[2] - bb[0])
+    def fix(p):
+        p = sscale(p, xfact=s, yfact=s, origin=(0, 0))
+        b = p.bounds
+        return stranslate(p, -(b[0] + b[2]) / 2.0, 0)  # x-center only here
+    # center x using the plate; apply same shift to all
+    pb = sscale(plate_poly, xfact=s, yfact=s, origin=(0, 0)).bounds
+    dx = -(pb[0] + pb[2]) / 2.0
+    def app(p):
+        return stranslate(sscale(p, xfact=s, yfact=s, origin=(0, 0)), dx, 0)
+    plate_poly, red_all, white_all = app(plate_poly), app(red_all), app(white_all)
 
     plate = g.extrude(plate_poly, 0.0,     PLATE_H)
     white = g.extrude(white_all,  PLATE_H, WHITE_RAISE)
