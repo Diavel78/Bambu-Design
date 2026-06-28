@@ -27,8 +27,8 @@ import generate_sonics_charm as g     # text_to_polygon, extrude, COLORS
 import trace_bow
 
 HERE = os.path.dirname(__file__)
-FONT_BLACK = os.path.join(HERE, "..", "fonts", "UnifrakturCook-Bold.ttf")
-FONT_NAME  = os.path.join(HERE, "..", "fonts", "DejaVuSans-Bold.ttf")
+FONT_GYM  = os.path.join(HERE, "..", "fonts", "Pacifico-Regular.ttf")
+FONT_NAME = os.path.join(HERE, "..", "fonts", "DejaVuSans-Bold.ttf")
 IMG        = os.path.join(HERE, "..", "assets", "cheer_bow_source.png")
 
 # --------------------------------------------------------------------------- #
@@ -97,7 +97,7 @@ def build(name, team, gym):
     # ---- text -------------------------------------------------------------
     lc, rc = loop_l.centroid, loop_r.centroid
     tw = (loop_r.bounds[2] - loop_r.bounds[0]) * 0.62
-    t_sonics = stranslate(fit_text(gym, FONT_BLACK, tw, max_h=15), lc.x, lc.y + 1)
+    t_sonics = stranslate(fit_text(gym, FONT_GYM, tw, max_h=15), lc.x, lc.y + 1)
     t_team   = stranslate(fit_text(team, FONT_NAME, tw * 0.78, max_h=9),
                           rc.x, rc.y + 8)
     t_name   = stranslate(fit_text(name, FONT_NAME, tw, max_h=11),
