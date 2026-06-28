@@ -111,17 +111,22 @@ you want and I'll regenerate — e.g.:
 To regenerate yourself (if you ever want to):
 
 ```bash
-pip install cadquery shapely matplotlib trimesh
-python3 src/generate_sonics_charm.py
+pip install cadquery shapely matplotlib trimesh pillow scipy
+python3 src/generate_sonics_charm.py   # charms + (run svg script for Cricut)
+python3 src/generate_bow.py --name Eden # cheer bow (traced from assets/)
 ```
 
 ---
 
 ## Cheer bow charms (with names!)
 
-A multi-color cheer bow that clips to a backpack — **white ribbon, red text,
+A multi-color cheer bow that clips to a backpack — **white loops, red text,
 black trim**, with a **red center knot** and a **fully-printed snap clip** on
 top. Layout: gym name on the left loop, team + athlete name on the right.
+
+The bow shape is **traced from a real bow image** (`assets/cheer_bow_source.png`)
+by `src/trace_bow.py`, so it actually looks like a cheer bow. To use a different
+bow, drop in a new black-on-white silhouette and re-run.
 
 ![bow preview](renders/bow_eden.png)
 

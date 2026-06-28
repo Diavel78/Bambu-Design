@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 """
-Generate a multi-color cheer-bow charm with a printed snap clip.
+Generate a multi-color cheer-bow charm from a traced bow image, with a
+printed snap clip.
 
-Real cheer-bow shape: two puffy loops splaying UP and out from a small
-center knot, with two tails hanging DOWN with fishtail (V-notch) ends.
+Bow shape is traced from assets/cheer_bow_source.png (see trace_bow.py):
+white loop faces, red center knot + red text, black tails/trim.
 
 Layout:
-  LEFT loop  : gym name      (default "Sonics", blackletter)
-  RIGHT loop : team name     (default "XOXO") over athlete name (default "Eden")
-Colors: white ribbon faces, red text + red center knot, black trim/tails.
-Attachment: a flat, fully-printed carabiner-style snap clip at the top.
+  LEFT loop  : gym name  (default "Sonics", blackletter)
+  RIGHT loop : team name (default "XOXO") over athlete name (default "Eden")
 
 Change the name fast:
     python3 generate_bow.py --name Eden
@@ -21,42 +20,26 @@ import math
 import argparse
 import cadquery as cq
 from shapely.geometry import Polygon, Point, LineString, box
-from shapely.affinity import scale as sscale, translate as stranslate, rotate as srot
+from shapely.affinity import scale as sscale, translate as stranslate
 from shapely.ops import unary_union
 
-import generate_sonics_charm as g  # reuse text_to_polygon, extrude, COLORS
+import generate_sonics_charm as g     # text_to_polygon, extrude, COLORS
+import trace_bow
 
 HERE = os.path.dirname(__file__)
 FONT_BLACK = os.path.join(HERE, "..", "fonts", "UnifrakturCook-Bold.ttf")
 FONT_NAME  = os.path.join(HERE, "..", "fonts", "DejaVuSans-Bold.ttf")
+IMG        = os.path.join(HERE, "..", "assets", "cheer_bow_source.png")
 
 # --------------------------------------------------------------------------- #
 # CONFIG (mm)
 # --------------------------------------------------------------------------- #
-TARGET_W   = 92.0     # final overall bow width (scaled at the end)
-
-# loops (modeled as tilted ellipses that meet only at the center knot)
-LOOP_A     = 22.0     # ellipse half-width
-LOOP_B     = 27.0     # ellipse half-height
-LOOP_CX    = 21.0     # how far out each loop center sits (apart -> two puffs)
-LOOP_CY    = 16.0     # how far up each loop center sits
-LOOP_TILT  = 30.0     # degrees each loop splays up-and-out
-
-KNOT_W     = 16.0     # small center cinch
-KNOT_TOP   = 9.0
-KNOT_BOT   = -9.0
-
-TAIL_LEN   = 42.0
-TAIL_W     = 18.0
-TAIL_SPLAY = 13.0     # degrees the tails splay apart
-TAIL_X     = 9.0      # tail center offset from middle
-TAIL_NOTCH = 9.0      # depth of the fishtail V
-
-TRIM        = 2.4     # black border around white faces
+TARGET_W    = 95.0
+TRIM        = 2.2     # black border around the white/red faces
 PLATE_H     = 2.6
 WHITE_RAISE = 0.8
 TEXT_RAISE  = 1.2
-TEXT_MOAT   = 0.7
+BRIDGE      = 1.8     # close the thin gaps between traced pieces -> one plate
 
 # carabiner snap clip + stem
 CLIP_ROUT   = 9.5
@@ -64,13 +47,11 @@ CLIP_RIN    = 5.8
 CLIP_GATE_W = 1.8
 CLIP_GAP_A  = (58.0, 122.0)
 CLIP_GATE_A = (54.0, 120.0)
-STEM_W      = 6.0
+STEM_W      = 6.5
 
 COLORS = g.COLORS
 
 
-# --------------------------------------------------------------------------- #
-# helpers
 # --------------------------------------------------------------------------- #
 def round_poly(poly, r):
     return poly.buffer(r, join_style=1).buffer(-r, join_style=1)
@@ -85,27 +66,6 @@ def fit_text(text, font_path, target_w, max_h=None):
     p = sscale(raw, xfact=s, yfact=s, origin=(0, 0))
     minx, miny, maxx, maxy = p.bounds
     return stranslate(p, -(minx + maxx) / 2.0, -(miny + maxy) / 2.0)
-
-
-def ellipse(a, b, n=72):
-    c = Point(0, 0).buffer(1.0, resolution=n // 4)
-    return sscale(c, xfact=a, yfact=b, origin=(0, 0))
-
-
-def loop_shape(sign):
-    el = ellipse(LOOP_A, LOOP_B)
-    el = srot(el, -sign * LOOP_TILT, origin=(0, 0))   # splay up-and-out
-    return stranslate(el, sign * LOOP_CX, LOOP_CY)
-
-
-def tail_shape(sign):
-    w = TAIL_W
-    rect = box(-w / 2, -TAIL_LEN, w / 2, 0)
-    notch = Polygon([(-w / 2, -TAIL_LEN), (w / 2, -TAIL_LEN),
-                     (0, -TAIL_LEN + TAIL_NOTCH)])
-    tail = round_poly(rect.difference(notch), 2.5)
-    tail = srot(tail, sign * TAIL_SPLAY, origin=(0, 0))
-    return stranslate(tail, sign * TAIL_X, -4)
 
 
 def carabiner():
@@ -126,50 +86,36 @@ def carabiner():
 
 # --------------------------------------------------------------------------- #
 def build(name, team, gym):
-    left  = loop_shape(-1)
-    right = loop_shape(+1)
-    knot  = round_poly(box(-KNOT_W / 2, KNOT_BOT, KNOT_W / 2, KNOT_TOP), 5.0)
-    tails = unary_union([tail_shape(-1), tail_shape(+1)])
+    parts = trace_bow.trace(IMG, TARGET_W)
+    loop_l, loop_r = parts["loop_l"], parts["loop_r"]
+    knot = parts["knot"]
+    pieces = [loop_l, loop_r, knot, parts["tail_l"], parts["tail_r"]]
 
-    # clip on a short stem rising from the top of the loops
-    loop_top = max(left.bounds[3], right.bounds[3])
-    clip_y = loop_top + CLIP_ROUT - 2.0
-    stem = round_poly(box(-STEM_W / 2, LOOP_CY, STEM_W / 2, clip_y), 2.0)
+    # one solid black plate (bridge the thin separators between pieces)
+    silhouette = unary_union(pieces).buffer(BRIDGE).buffer(-BRIDGE + 0.2)
+
+    # snap clip on a stem rising from the knot, up between the loop tops
+    loop_top = max(loop_l.bounds[3], loop_r.bounds[3])
+    clip_y = loop_top + CLIP_ROUT + 1.0
+    stem = round_poly(box(-STEM_W / 2, knot.centroid.y, STEM_W / 2, clip_y), 2.0)
     clip = stranslate(carabiner(), 0, clip_y)
-
-    plate_poly = unary_union([left, right, knot, tails, stem, clip])
+    plate_poly = unary_union([silhouette, stem, clip])
 
     # ---- text -------------------------------------------------------------
-    # anchors placed in the meat of each loop puff, clear of the knot
-    tw = LOOP_A * 1.1
-    LX, RX = -25.0, 27.0
-    t_sonics = stranslate(fit_text(gym, FONT_BLACK, tw, max_h=14), LX, 7)
-    t_team   = stranslate(fit_text(team, FONT_NAME, tw * 0.80, max_h=9), RX, 14)
-    t_name   = stranslate(fit_text(name, FONT_NAME, tw, max_h=10), RX, 1)
+    lc, rc = loop_l.centroid, loop_r.centroid
+    tw = (loop_r.bounds[2] - loop_r.bounds[0]) * 0.62
+    t_sonics = stranslate(fit_text(gym, FONT_BLACK, tw, max_h=15), lc.x, lc.y + 1)
+    t_team   = stranslate(fit_text(team, FONT_NAME, tw * 0.78, max_h=9),
+                          rc.x, rc.y + 8)
+    t_name   = stranslate(fit_text(name, FONT_NAME, tw, max_h=11),
+                          rc.x, rc.y - 7)
     text_all = unary_union([t_sonics, t_team, t_name])
 
-    # red center knot face
+    # red = knot face + text;  white = loop faces minus the red moat
     knot_face = knot.buffer(-TRIM)
     red_all = unary_union([text_all, knot_face])
-
-    # white loop faces: inset loops minus the red moat and the knot
-    panel = unary_union([left.buffer(-TRIM), right.buffer(-TRIM)])
-    moat = text_all.buffer(TEXT_MOAT)
-    white_all = panel.difference(moat).difference(knot.buffer(0.6))
-
-    # ---- scale whole design to TARGET_W, recenter ------------------------
-    bb = plate_poly.bounds
-    s = TARGET_W / (bb[2] - bb[0])
-    def fix(p):
-        p = sscale(p, xfact=s, yfact=s, origin=(0, 0))
-        b = p.bounds
-        return stranslate(p, -(b[0] + b[2]) / 2.0, 0)  # x-center only here
-    # center x using the plate; apply same shift to all
-    pb = sscale(plate_poly, xfact=s, yfact=s, origin=(0, 0)).bounds
-    dx = -(pb[0] + pb[2]) / 2.0
-    def app(p):
-        return stranslate(sscale(p, xfact=s, yfact=s, origin=(0, 0)), dx, 0)
-    plate_poly, red_all, white_all = app(plate_poly), app(red_all), app(white_all)
+    panel = unary_union([loop_l.buffer(-TRIM), loop_r.buffer(-TRIM)])
+    white_all = panel.difference(text_all.buffer(0.7)).difference(knot.buffer(0.6))
 
     plate = g.extrude(plate_poly, 0.0,     PLATE_H)
     white = g.extrude(white_all,  PLATE_H, WHITE_RAISE)
