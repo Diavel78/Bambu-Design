@@ -152,9 +152,50 @@ the layer lines.
 
 ---
 
+## "Well Red Book Club" page-slide bookmarks
+
+A bookmark that **slides over the top (or side) edge of a page** — no fold,
+no clip mechanism, nothing to break. Three flat rounded prongs hang below a
+round **Well Red Book Club** logo badge; the paper weaves between them
+(in front of the two outer prongs, behind the wide center one) and the
+paper's own stiffness holds it in place. The badge and center prong face
+you while it's on the page.
+
+![bookmark preview](renders/bookmark.png)
+
+- Files: `models/bookmark/` — same structure as the charms:
+  `_plate` = **cream** body, `_art` = **burgundy** rings + wine glass,
+  `_text` = **burgundy** lettering, plus `_combined.stl` and `.step`.
+- Size: **46 mm badge, ~110 mm tall, 2.2 mm thick** — sized for paperback
+  and hardcover pages alike.
+- Multi-color print exactly like the charms: import the three STLs as one
+  object, assign **cream/white** to `_plate` and **dark red / burgundy**
+  (e.g. Bambu "Maroon Red" or dark red PLA) to `_art` and `_text`. They can
+  share one filament slot — they're separate files so you *can* use two reds.
+
+### Print settings
+Flat as loaded, no supports. 0.12–0.16 mm layers for crisp lettering,
+3 walls, 15 % infill. One bookmark is a few grams and ~30–45 minutes;
+plate a whole book club's worth at once.
+
+### How to use it
+Slide it down over the top edge of your page: the page tucks **behind**
+the wide center prong and **in front of** the two outer ones. The longer
+center prong makes threading easy — start there.
+
+### One per member — names on the center prong
+```bash
+python3 src/generate_wellred_bookmark.py              # plain
+python3 src/generate_wellred_bookmark.py --name Rob   # adds a script name
+```
+Each named run creates `models/bookmark_<name>/` plus a preview render.
+Send me the member list and I'll batch them all out.
+
+---
+
 ## Credits / license
 
-- Font: **UnifrakturCook** by Peter Wiegel / GFOS, licensed under the
-  **SIL Open Font License 1.1** (free for personal & commercial use). See
-  `fonts/LICENSE.md`.
+- Fonts: **UnifrakturCook** (charms), **Pacifico**, **Playfair Display**,
+  and **DejaVu Sans** (bookmarks) — all free for personal & commercial use
+  (SIL OFL 1.1 / Bitstream Vera). See `fonts/LICENSE.md`.
 - Logo wordmark belongs to the sonics team — this is a fan/personal-use charm.
