@@ -56,16 +56,15 @@ def main():
     box_path = os.path.join(OUT_DIR, "drink_box.stl")
     box.export(box_path)
 
-    # Layout, as drawn on the sketch:
-    #   FRONT row: 2 boxes turned SIDEWAYS -> 7 in across x 5 in deep (fills width)
-    #   BACK row : 2 boxes normal          -> 5 in across x 7 in deep
+    # All boxes turned SIDEWAYS -> 7 in across x 5 in deep.
+    #   across: 2 x 7 = 14 in (fills the 14.5 in width)
+    #   deep  : 4 x 5 = 20 in (fills the 20 in length)   -> 8 boxes, whole drawer
     # (x0, y0) = lower-left corner in inches; (w, d) = across, deep; rot = sideways?
-    rects = [
-        (0.0, 0.0, BOX_DEEP_IN,   BOX_ACROSS_IN, True),   # front-left sideways
-        (7.0, 0.0, BOX_DEEP_IN,   BOX_ACROSS_IN, True),   # front-right sideways
-        (0.0, 5.0, BOX_ACROSS_IN, BOX_DEEP_IN,   False),  # back-left
-        (5.0, 5.0, BOX_ACROSS_IN, BOX_DEEP_IN,   False),  # back-right
-    ]
+    rects = []
+    for row in range(4):          # 4 deep along the 20 in length
+        for col in range(2):      # 2 across the 14.5 in width
+            rects.append((col * BOX_DEEP_IN, row * BOX_ACROSS_IN,
+                          BOX_DEEP_IN, BOX_ACROSS_IN, True))
 
     combo = []
     for (x0, y0, w, d, rot) in rects:
@@ -112,19 +111,17 @@ def main():
             ax.add_patch(Rectangle((x0, y0), w, d, fc="#cfe8ff", ec="#2b6cb0", lw=2))
             label = "7 wide\n5 deep" if rot else "5 wide\n7 deep"
             ax.text(x0 + w/2, y0 + d/2, label, ha="center", va="center", fontsize=11)
-        ax.text(DRAWER_W_IN/2, (12 + DRAWER_L_IN)/2, "(space for other stuff)",
-                ha="center", va="center", fontsize=10, color="#888", style="italic")
         ax.set_xlim(-1, DRAWER_W_IN + 1); ax.set_ylim(-1, DRAWER_L_IN + 1); ax.set_aspect("equal")
         ax.set_xlabel("14.5 in (across)"); ax.set_ylabel("20 in (front-to-back)")
-        ax.set_title(f"{N_ACROSS*N_DEEP} boxes, 5 x 7 x 2 in each")
+        ax.set_title(f"{len(rects)} boxes, 5 x 7 x 2 in each  (all sideways, whole drawer)")
         fig.tight_layout(); fig.savefig(os.path.join(RENDER_DIR, "drawer_layout.png"), dpi=110)
         plt.close(fig)
     except Exception as e:
         print(f"(skipped renders: {e})")
 
     print("Box : 5 x 7 x 2 in  ->", os.path.basename(box_path))
-    print(f"Fit : {N_ACROSS} across (2 x 5 = 10 in) x {N_DEEP} deep (2 x 7 = 14 in) "
-          f"= {N_ACROSS*N_DEEP} boxes")
+    print(f"Fit : all sideways (7 across x 5 deep) -> 2 across (14 in) x 4 deep "
+          f"(20 in) = {len(rects)} boxes, whole drawer")
 
 
 if __name__ == "__main__":
