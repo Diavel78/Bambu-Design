@@ -56,15 +56,26 @@ def main():
     box_path = os.path.join(OUT_DIR, "drink_box.stl")
     box.export(box_path)
 
-    # place N_ACROSS x N_DEEP boxes, front-anchored (drawer X=across, Y=deep)
+    # Layout, as drawn on the sketch:
+    #   FRONT row: 2 boxes turned SIDEWAYS -> 7 in across x 5 in deep (fills width)
+    #   BACK row : 2 boxes normal          -> 5 in across x 7 in deep
+    # (x0, y0) = lower-left corner in inches; (w, d) = across, deep; rot = sideways?
+    rects = [
+        (0.0, 0.0, BOX_DEEP_IN,   BOX_ACROSS_IN, True),   # front-left sideways
+        (7.0, 0.0, BOX_DEEP_IN,   BOX_ACROSS_IN, True),   # front-right sideways
+        (0.0, 5.0, BOX_ACROSS_IN, BOX_DEEP_IN,   False),  # back-left
+        (5.0, 5.0, BOX_ACROSS_IN, BOX_DEEP_IN,   False),  # back-right
+    ]
+
     combo = []
-    for a in range(N_ACROSS):
-        for d in range(N_DEEP):
-            m = box.copy()
-            x = (-DRAWER_W_IN / 2 + (a + 0.5) * BOX_ACROSS_IN) * IN
-            y = (-DRAWER_L_IN / 2 + (d + 0.5) * BOX_DEEP_IN) * IN
-            m.apply_translation([x, y, 0])
-            combo.append(m)
+    for (x0, y0, w, d, rot) in rects:
+        m = box.copy()
+        if rot:
+            m.apply_transform(trimesh.transformations.rotation_matrix(np.pi / 2, [0, 0, 1]))
+        cx = (-DRAWER_W_IN / 2 + x0 + w / 2) * IN
+        cy = (-DRAWER_L_IN / 2 + y0 + d / 2) * IN
+        m.apply_translation([cx, cy, 0])
+        combo.append(m)
     trimesh.util.concatenate(combo).export(
         os.path.join(OUT_DIR, "drawer_layout_preview.stl"))
 
@@ -97,15 +108,11 @@ def main():
         # Top-down: WIDTH horizontal (14.5 in), LENGTH vertical (20 in), front at bottom
         fig, ax = plt.subplots(figsize=(8 * DRAWER_W_IN / DRAWER_L_IN * 1.3, 8))
         ax.add_patch(Rectangle((0, 0), DRAWER_W_IN, DRAWER_L_IN, fill=False, lw=3, ec="#444"))
-        for a in range(N_ACROSS):
-            for d in range(N_DEEP):
-                x = a * BOX_ACROSS_IN
-                y = d * BOX_DEEP_IN
-                ax.add_patch(Rectangle((x, y), BOX_ACROSS_IN, BOX_DEEP_IN,
-                                       fc="#cfe8ff", ec="#2b6cb0", lw=2))
-                ax.text(x + BOX_ACROSS_IN/2, y + BOX_DEEP_IN/2, "5 x 7\nx 2 in",
-                        ha="center", va="center", fontsize=11)
-        ax.text(DRAWER_W_IN/2, (N_DEEP*BOX_DEEP_IN + DRAWER_L_IN)/2, "(space for other stuff)",
+        for (x0, y0, w, d, rot) in rects:
+            ax.add_patch(Rectangle((x0, y0), w, d, fc="#cfe8ff", ec="#2b6cb0", lw=2))
+            label = "7 wide\n5 deep" if rot else "5 wide\n7 deep"
+            ax.text(x0 + w/2, y0 + d/2, label, ha="center", va="center", fontsize=11)
+        ax.text(DRAWER_W_IN/2, (12 + DRAWER_L_IN)/2, "(space for other stuff)",
                 ha="center", va="center", fontsize=10, color="#888", style="italic")
         ax.set_xlim(-1, DRAWER_W_IN + 1); ax.set_ylim(-1, DRAWER_L_IN + 1); ax.set_aspect("equal")
         ax.set_xlabel("14.5 in (across)"); ax.set_ylabel("20 in (front-to-back)")
