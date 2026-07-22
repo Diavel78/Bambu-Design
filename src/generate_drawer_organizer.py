@@ -38,33 +38,38 @@ DRAWER_L = 20.0 * IN     # 508.0 mm  (the "20 inch" run)
 DRAWER_W = 14.5 * IN     # 368.3 mm  (the "14.5 inch" run)
 DRAWER_D = 2.4 * IN      # ~61   mm  (just under 2.5 in deep)
 
-# --- Stick packet (measured, with a little slack) ---
-STICK_LEN = 4.25 * IN    # ~108 mm  laid horizontally in the box
-STICK_TALL = 1.25 * IN   # ~32  mm  how tall it stands up
-STICK_THICK = 0.40 * IN  # ~10  mm  used only to estimate capacity
+# --- Packet (measured) ---
+# The packets lie FLAT and stack on top of each other.
+PKT_LEN = 4.25 * IN      # ~108 mm  long side, lies along the box width
+PKT_WIDE = 1.25 * IN     # ~32  mm  short side, lies along the box depth
+PKT_THICK = 0.20 * IN    # ~5   mm  thickness flat -> sets how many stack up
 
-# --- Grid: how many boxes tile the drawer ---
-COLS = 4                 # boxes along the 20 in run
-ROWS = 2                 # boxes along the 14.5 in run
+# --- Grid: 4 bins across the FRONT of the drawer (one flavor each) ---
+COLS = 4                 # bins across the 20 in run
+ROWS = 1                 # rows of bins from the front (1 = front strip only)
+BOX_DEPTH = 150.0        # how far each bin reaches back (~6 in); rest of the
+                         # drawer stays free for your other stuff
 DRAWER_GAP = 2.0         # total slack per box per axis (drop-in clearance)
 
 # --- Box build ---
-BOX_H = 38.0             # box height (drawer is ~61 mm, so lots of clearance)
+BOX_H = 50.0             # ~2 in tall (drawer is ~61 mm, leaves room to grab)
 WALL = 2.0              # wall thickness
 FLOOR = 2.0             # floor thickness
 
-# --- Front scoop (the curved dip you grab sticks through) ---
-SCOOP_DIP = 22.0         # how far the front wall is lowered at its center
-SCOOP_R = 80.0           # arc radius (bigger = shallower, wider U)
+# --- Front scoop (the curved dip you reach in / slide the top packet out) ---
+SCOOP_DIP = 30.0         # how far the front wall is lowered at its center
+SCOOP_R = 90.0           # arc radius (bigger = shallower, wider U)
 
 OUT_DIR = os.path.join(os.path.dirname(__file__), "..", "models", "drawer_organizer")
 RENDER_DIR = os.path.join(os.path.dirname(__file__), "..", "renders")
 
 # --------------------------------------------------------------------------- #
-# Derived box footprint (fills the drawer exactly, minus drop-in clearance)
+# Derived box footprint
+#   - width (X): tiles the 20 in run so COLS bins sit side by side
+#   - depth (Y): fixed reach into the drawer, front-anchored
 # --------------------------------------------------------------------------- #
 BOX_L = DRAWER_L / COLS - DRAWER_GAP   # X, along the 20 in run
-BOX_W = DRAWER_W / ROWS - DRAWER_GAP   # Y, along the 14.5 in run
+BOX_W = BOX_DEPTH - DRAWER_GAP         # Y, front-to-back reach
 
 
 def _engine_diff(a, b):
@@ -112,19 +117,22 @@ def main():
     box_path = os.path.join(OUT_DIR, "drink_stick_box.stl")
     box_mesh.export(box_path)
 
-    # Capacity estimate
+    # Capacity estimate: packets laid FLAT, stacked up
     inner_len = BOX_L - 2 * WALL
-    inner_file = BOX_W - 2 * WALL
-    per_box = int(inner_file // STICK_THICK)
+    inner_dep = BOX_W - 2 * WALL
+    inner_ht = BOX_H - FLOOR
+    per_layer = max(1, int(inner_len // PKT_LEN)) * max(1, int(inner_dep // PKT_WIDE))
+    layers = max(1, int(inner_ht // PKT_THICK))
+    per_box = per_layer * layers
     total = per_box * COLS * ROWS
 
-    # Whole-drawer preview (not for printing -- just to look at the fit)
+    # Placement preview (front-anchored bins; rest of drawer left free)
     combo = []
     for c in range(COLS):
         for r in range(ROWS):
             m = box_mesh.copy()
             x = -DRAWER_L / 2.0 + (c + 0.5) * (DRAWER_L / COLS)
-            y = -DRAWER_W / 2.0 + (r + 0.5) * (DRAWER_W / ROWS)
+            y = -DRAWER_W / 2.0 + DRAWER_GAP / 2.0 + BOX_W / 2.0 + r * BOX_DEPTH
             m.apply_translation([x, y, 0])
             combo.append(m)
     preview = trimesh.util.concatenate(combo)
@@ -141,19 +149,21 @@ def main():
         os.makedirs(RENDER_DIR, exist_ok=True)
         fig, ax = plt.subplots(figsize=(8, 8 * DRAWER_W / DRAWER_L))
         ax.add_patch(Rectangle((0, 0), DRAWER_L, DRAWER_W, fill=False, lw=3, ec="#444"))
+        ax.text(DRAWER_L / 2, DRAWER_W * 0.72, "rest of drawer left free\n(your other stuff)",
+                ha="center", va="center", fontsize=11, color="#888", style="italic")
         for c in range(COLS):
             for r in range(ROWS):
                 x = c * (DRAWER_L / COLS) + DRAWER_GAP / 2
-                y = r * (DRAWER_W / ROWS) + DRAWER_GAP / 2
+                y = DRAWER_GAP / 2 + r * BOX_DEPTH
                 ax.add_patch(Rectangle((x, y), BOX_L, BOX_W, fc="#cfe8ff",
                                        ec="#2b6cb0", lw=2))
                 ax.text(x + BOX_L / 2, y + BOX_W / 2,
-                        f"~{per_box} sticks", ha="center", va="center", fontsize=11)
+                        f"~{per_box}\npackets", ha="center", va="center", fontsize=10)
         ax.set_xlim(-10, DRAWER_L + 10)
         ax.set_ylim(-10, DRAWER_W + 10)
         ax.set_aspect("equal")
-        ax.set_title(f'Drawer: 20 x 14.5 in  |  {COLS*ROWS} boxes '
-                     f'({COLS} x {ROWS})  |  ~{total} sticks total')
+        ax.set_title(f'Drawer: 20 x 14.5 in  |  {COLS*ROWS} bins across the front '
+                     f'|  packets lie flat, ~{total} total')
         ax.set_xlabel("20 in (508 mm)")
         ax.set_ylabel("14.5 in (368 mm)")
         fig.tight_layout()
@@ -165,23 +175,22 @@ def main():
         print(f"(skipped PNG render: {e})")
 
     print("=" * 62)
-    print("Drawer organizer generated")
+    print("Drawer organizer generated  (FLAT-STACK bins)")
     print("=" * 62)
     print(f"Drawer inside : {DRAWER_L:.0f} x {DRAWER_W:.0f} x {DRAWER_D:.0f} mm "
           f"(20 x 14.5 x 2.4 in)")
-    print(f"Grid          : {COLS} across x {ROWS} deep = {COLS*ROWS} boxes "
-          f"(all identical)")
-    print(f"Box outside   : {BOX_L:.1f} x {BOX_W:.1f} x {BOX_H:.1f} mm")
-    print(f"Box inside    : {inner_len:.1f} x {inner_file:.1f} x "
-          f"{BOX_H-FLOOR:.1f} mm")
-    print(f"Stick fit     : {STICK_LEN:.0f} mm long fits the {inner_len:.0f} mm "
-          f"inside length")
-    print(f"Capacity      : ~{per_box} sticks/box  ->  ~{total} sticks total")
-    print(f"Front scoop   : dips to {BOX_H-SCOOP_DIP:.0f} mm at center "
-          f"(sticks stand {STICK_TALL:.0f} mm)")
+    print(f"Layout        : {COLS} bins across the front "
+          f"(reach {BOX_DEPTH/IN:.1f} in back; rest left free)")
+    print(f"Box outside   : {BOX_L:.1f} x {BOX_W:.1f} x {BOX_H:.1f} mm "
+          f"({BOX_L/IN:.1f} x {BOX_W/IN:.1f} x {BOX_H/IN:.1f} in)")
+    print(f"Box inside    : {inner_len:.1f} x {inner_dep:.1f} x {inner_ht:.1f} mm")
+    print(f"Packet flat   : {PKT_LEN:.0f} x {PKT_WIDE:.0f} mm -> "
+          f"{per_layer}/layer x {layers} layers")
+    print(f"Capacity      : ~{per_box} packets/bin  ->  ~{total} total")
+    print(f"Front scoop   : dips to {BOX_H-SCOOP_DIP:.0f} mm at center")
     print("-" * 62)
     print(f"PRINT: {box_path}")
-    print(f"       ...repeat {COLS*ROWS} times (fits ~4 per H2D plate).")
+    print(f"       ...repeat {COLS*ROWS} times (fits ~2 per H2D plate).")
     print(f"PREVIEW (do not print): {preview_path}")
     if rendered:
         print(f"MAP: renders/drawer_layout.png")

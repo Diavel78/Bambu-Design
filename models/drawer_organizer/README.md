@@ -1,51 +1,47 @@
-# Drink-stick drawer organizer
+# Drink-packet drawer organizer (flat-stack bins)
 
-Open-top boxes that turn a **20 × 14.5 × ~2.4 in** drawer into an organized
-file of drink-mix **stick packets** (ICEE, Liquid Death, LMNT, etc. —
-~4.25 × 1.25 in). The sticks stand up and file front-to-back like index cards,
-and a curved **scoop** in the front wall lets you see the flavors and slide one
-out.
+Open-top bins for a **20 × 14.5 × ~2.4 in** drawer. Drink-mix packets
+(ICEE, Holloway, Laura Beverlin, etc.) **lie flat and stack up** inside — one
+flavor per bin. A curved **scoop** in the front lets you reach in and slide the
+top packet out.
 
-No baseplate, no Gridfinity — **just boxes**. Sized to fill the drawer, so they
-can't slide around.
+No baseplate, no Gridfinity — **just bins**.
 
 ![box](../../renders/drink_stick_box.png)
 ![layout](../../renders/drawer_layout.png)
+
+## Layout
+
+**4 bins across the front** of the drawer, each reaching ~6 in back. The rest of
+the drawer stays free for your other stuff. Each bin holds **~36 packets laid
+flat** (they stack ~9 high in the 2 in depth) → **~144 total**.
 
 ## What to print
 
 | File | What | Print how many |
 |------|------|----------------|
-| `drink_stick_box.stl` | One box (125 × 182 × 38 mm), scooped front | **8×** (they're all identical) |
-| `drawer_layout_preview.stl` | All 8 arranged in the drawer | **don't print** — just to eyeball the fit |
-
-**Layout:** 8 identical boxes, **4 across × 2 deep**, fills the 20 × 14.5 in
-floor with a few mm of drop-in slack. Each box holds **~17 sticks** of one
-flavor → **~136 sticks** total. Put the **scooped side facing you**.
+| `drink_stick_box.stl` | One bin (125 × 148 × 50 mm), scooped front | **4×** (all identical) |
+| `drawer_layout_preview.stl` | The 4 bins placed in the drawer | **don't print** — just to eyeball it |
 
 ## Print settings (Bambu H2D, one color)
 
 | Setting | Value |
 |---|---|
 | Material | PLA (or PETG) |
-| Layer height | 0.2–0.28 mm (these are just bins — go fast) |
+| Layer height | 0.2–0.28 mm |
 | Walls | 3 |
 | Infill | 10–15% |
-| Supports | **None** (scoop is a gentle arc, prints fine) |
+| Supports | **None** (the scoop is a gentle arc) |
 | Orientation | As-is, open side up |
-| Per plate | ~4 boxes fit an H2D plate → 2 plates for all 8 |
-
-Each box is ~86 cm³ / roughly 100–110 g of filament and a couple hours.
+| Per plate | ~2 bins per H2D plate → 2 plates for all 4 |
 
 ## Want it different? It's parametric
 
 Edit the CONFIG block in `src/generate_drawer_organizer.py` and re-run
-`python3 src/generate_drawer_organizer.py`. Common tweaks:
+`python3 src/generate_drawer_organizer.py`:
 
-- **More, smaller compartments:** set `ROWS = 3` → 12 boxes (~11 sticks each).
-- **Fewer, bigger:** set `COLS = 3` → 6 boxes.
-- **Taller/shorter boxes:** `BOX_H`.
-- **Deeper/shallower scoop:** `SCOOP_DIP` (and `SCOOP_R` for its width).
-- **Different drawer or packet:** `DRAWER_L/W/D`, `STICK_LEN/TALL/THICK`.
-
-The box footprint is derived so `COLS × ROWS` boxes always tile the drawer.
+- **Fill the whole drawer** (front *and* back): set `ROWS = 2` → 8 bins.
+- **More / fewer bins across:** `COLS`.
+- **Deeper or shallower reach:** `BOX_DEPTH`.
+- **Taller / shorter bins:** `BOX_H`.
+- **Different packet or drawer:** `PKT_*`, `DRAWER_*`.
