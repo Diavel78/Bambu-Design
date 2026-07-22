@@ -1,31 +1,32 @@
-# Drink-packet drawer organizer (flat-stack bins)
+# Drink-packet drawer organizer (file on edge)
 
 Open-top bins for a **20 × 14.5 × ~2.4 in** drawer. Drink-mix packets
-(ICEE, Holloway, Laura Beverlin, etc.) **lie flat and stack up** inside — one
-flavor per bin. A curved **scoop** in the front lets you reach in and slide the
-top packet out.
+(ICEE, Holloway, Laura Beverlin, etc.) **stand on edge and file front-to-back
+like folders** — you flip through them and pull one out. A curved **scoop** in
+the front wall gives finger access.
 
 No baseplate, no Gridfinity — **just bins**.
 
-![box](../../renders/drink_stick_box.png)
+![bin](../../renders/drink_stick_box.png)
 ![layout](../../renders/drawer_layout.png)
 
 ## Layout
 
-**4 rows of 5 in down the 20 in length**, each row spanning the 14.5 in width.
-A full-width tray (~14.5 in / 368 mm) is bigger than the H2D bed (~350 mm), so
-each row is **2 bins side by side** → a **2 × 4 grid, 8 bins total**, filling the
-whole drawer. Each bin holds **~45 packets laid flat** (they stack ~9 high in
-the 2 in depth) → plenty of headroom for however many you keep.
+**2 long trays running the length of the drawer, side by side.** A full 20 in
+tray won't fit the H2D bed (~350 mm), so each tray is **2 pieces** → a **2 × 2
+grid of 4 identical bins** that fills the whole drawer.
 
-Each bin is **4.9 × 7.2 × 2 in** (125 × 182 × 50 mm) — fits the bed easily.
+- Each bin: **9.9 × 7.2 × 1.6 in** (252 × 182 × 40 mm)
+- Packets stand ~1.25 in tall and file along the 10 in length — **plenty of
+  room**, way more than you'll fill
+- Scoop faces the front of the drawer so you flip through and grab
 
 ## What to print
 
 | File | What | Print how many |
 |------|------|----------------|
-| `drink_stick_box.stl` | One bin, scooped front | **8×** (all identical) |
-| `drawer_layout_preview.stl` | All 8 placed in the drawer | **don't print** — just to eyeball it |
+| `drink_stick_box.stl` | One bin, scooped front | **4×** (all identical) |
+| `drawer_layout_preview.stl` | All 4 placed in the drawer | **don't print** — just to eyeball it |
 
 ## Print settings (Bambu H2D, one color)
 
@@ -35,16 +36,16 @@ Each bin is **4.9 × 7.2 × 2 in** (125 × 182 × 50 mm) — fits the bed easily
 | Layer height | 0.2–0.28 mm |
 | Walls | 3 |
 | Infill | 10–15% |
-| Supports | **None** (the scoop is a gentle arc) |
+| Supports | **None** (scoop is a gentle arc) |
 | Orientation | As-is, open side up |
-| Per plate | ~2 bins per H2D plate → 4 plates for all 8 |
+| Per plate | 1 bin per H2D plate (they're ~10 in long) |
 
 ## Want it different? It's parametric
 
 Edit the CONFIG block in `src/generate_drawer_organizer.py` and re-run
 `python3 src/generate_drawer_organizer.py`:
 
-- **Only fill the front** (leave the back for other stuff): `ROWS = 1`.
-- **More / fewer rows down the length:** `COLS`.
+- **More divisions down the length:** `COLS` (e.g. 4 → shorter bins).
+- **More trays across the width:** `ROWS`.
 - **Taller / shorter bins:** `BOX_H`.
 - **Different packet or drawer:** `PKT_*`, `DRAWER_*`.
