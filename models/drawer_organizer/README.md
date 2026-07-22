@@ -12,16 +12,20 @@ No baseplate, no Gridfinity — **just bins**.
 
 ## Layout
 
-**4 bins across the front** of the drawer, each reaching ~6 in back. The rest of
-the drawer stays free for your other stuff. Each bin holds **~36 packets laid
-flat** (they stack ~9 high in the 2 in depth) → **~144 total**.
+**4 rows of 5 in down the 20 in length**, each row spanning the 14.5 in width.
+A full-width tray (~14.5 in / 368 mm) is bigger than the H2D bed (~350 mm), so
+each row is **2 bins side by side** → a **2 × 4 grid, 8 bins total**, filling the
+whole drawer. Each bin holds **~45 packets laid flat** (they stack ~9 high in
+the 2 in depth) → plenty of headroom for however many you keep.
+
+Each bin is **4.9 × 7.2 × 2 in** (125 × 182 × 50 mm) — fits the bed easily.
 
 ## What to print
 
 | File | What | Print how many |
 |------|------|----------------|
-| `drink_stick_box.stl` | One bin (125 × 148 × 50 mm), scooped front | **4×** (all identical) |
-| `drawer_layout_preview.stl` | The 4 bins placed in the drawer | **don't print** — just to eyeball it |
+| `drink_stick_box.stl` | One bin, scooped front | **8×** (all identical) |
+| `drawer_layout_preview.stl` | All 8 placed in the drawer | **don't print** — just to eyeball it |
 
 ## Print settings (Bambu H2D, one color)
 
@@ -33,15 +37,14 @@ flat** (they stack ~9 high in the 2 in depth) → **~144 total**.
 | Infill | 10–15% |
 | Supports | **None** (the scoop is a gentle arc) |
 | Orientation | As-is, open side up |
-| Per plate | ~2 bins per H2D plate → 2 plates for all 4 |
+| Per plate | ~2 bins per H2D plate → 4 plates for all 8 |
 
 ## Want it different? It's parametric
 
 Edit the CONFIG block in `src/generate_drawer_organizer.py` and re-run
 `python3 src/generate_drawer_organizer.py`:
 
-- **Fill the whole drawer** (front *and* back): set `ROWS = 2` → 8 bins.
-- **More / fewer bins across:** `COLS`.
-- **Deeper or shallower reach:** `BOX_DEPTH`.
+- **Only fill the front** (leave the back for other stuff): `ROWS = 1`.
+- **More / fewer rows down the length:** `COLS`.
 - **Taller / shorter bins:** `BOX_H`.
 - **Different packet or drawer:** `PKT_*`, `DRAWER_*`.

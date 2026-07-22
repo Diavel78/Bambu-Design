@@ -44,11 +44,12 @@ PKT_LEN = 4.25 * IN      # ~108 mm  long side, lies along the box width
 PKT_WIDE = 1.25 * IN     # ~32  mm  short side, lies along the box depth
 PKT_THICK = 0.20 * IN    # ~5   mm  thickness flat -> sets how many stack up
 
-# --- Grid: 4 bins across the FRONT of the drawer (one flavor each) ---
-COLS = 4                 # bins across the 20 in run
-ROWS = 1                 # rows of bins from the front (1 = front strip only)
-BOX_DEPTH = 150.0        # how far each bin reaches back (~6 in); rest of the
-                         # drawer stays free for your other stuff
+# --- Grid: fill the drawer with 5-in-deep rows, 2 bins per row ---
+# A full 14.5 in wide tray (~368 mm) is too big for the H2D bed (~350 mm),
+# so each "row across the width" is 2 bins side by side.
+COLS = 4                 # bins along the 20 in run  (4 x 5 in = 20 in)
+ROWS = 2                 # bins across the 14.5 in run (2 x ~7.25 in)
+BOX_DEPTH = 184.0        # depth per row = 14.5 in / 2 (fills the width)
 DRAWER_GAP = 2.0         # total slack per box per axis (drop-in clearance)
 
 # --- Box build ---
@@ -149,8 +150,11 @@ def main():
         os.makedirs(RENDER_DIR, exist_ok=True)
         fig, ax = plt.subplots(figsize=(8, 8 * DRAWER_W / DRAWER_L))
         ax.add_patch(Rectangle((0, 0), DRAWER_L, DRAWER_W, fill=False, lw=3, ec="#444"))
-        ax.text(DRAWER_L / 2, DRAWER_W * 0.72, "rest of drawer left free\n(your other stuff)",
-                ha="center", va="center", fontsize=11, color="#888", style="italic")
+        covered = ROWS * BOX_DEPTH
+        if covered < DRAWER_W - 20:
+            ax.text(DRAWER_L / 2, (covered + DRAWER_W) / 2,
+                    "rest of drawer left free\n(your other stuff)",
+                    ha="center", va="center", fontsize=11, color="#888", style="italic")
         for c in range(COLS):
             for r in range(ROWS):
                 x = c * (DRAWER_L / COLS) + DRAWER_GAP / 2
@@ -162,8 +166,8 @@ def main():
         ax.set_xlim(-10, DRAWER_L + 10)
         ax.set_ylim(-10, DRAWER_W + 10)
         ax.set_aspect("equal")
-        ax.set_title(f'Drawer: 20 x 14.5 in  |  {COLS*ROWS} bins across the front '
-                     f'|  packets lie flat, ~{total} total')
+        ax.set_title(f'Drawer: 20 x 14.5 in  |  {COLS} rows x {ROWS} bins = '
+                     f'{COLS*ROWS} bins  |  packets lie flat, ~{total} total')
         ax.set_xlabel("20 in (508 mm)")
         ax.set_ylabel("14.5 in (368 mm)")
         fig.tight_layout()
@@ -179,8 +183,8 @@ def main():
     print("=" * 62)
     print(f"Drawer inside : {DRAWER_L:.0f} x {DRAWER_W:.0f} x {DRAWER_D:.0f} mm "
           f"(20 x 14.5 x 2.4 in)")
-    print(f"Layout        : {COLS} bins across the front "
-          f"(reach {BOX_DEPTH/IN:.1f} in back; rest left free)")
+    print(f"Layout        : {COLS} rows along the 20 in x {ROWS} bins across "
+          f"the width = {COLS*ROWS} bins")
     print(f"Box outside   : {BOX_L:.1f} x {BOX_W:.1f} x {BOX_H:.1f} mm "
           f"({BOX_L/IN:.1f} x {BOX_W/IN:.1f} x {BOX_H/IN:.1f} in)")
     print(f"Box inside    : {inner_len:.1f} x {inner_dep:.1f} x {inner_ht:.1f} mm")
