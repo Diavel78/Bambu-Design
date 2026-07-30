@@ -152,6 +152,14 @@ the layer lines.
 
 ---
 
+## Other designs in this repo
+
+| Design | Folder | What it is |
+|--------|--------|------------|
+| **Vertical blind vane stem** | `models/blind_stem/` | Replacement for the little clear hook the blind vanes hang from — see its README for fit-testing and print settings. |
+
+---
+
 ## Credits / license
 
 - Font: **UnifrakturCook** by Peter Wiegel / GFOS, licensed under the
