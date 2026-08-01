@@ -11,11 +11,10 @@ so the set drops in with ~1/8 in of wiggle room.
 Small drawer (8 in wide, 5 boxes):
   front: [DEEP DEEP SLIML]   back: [BACK SLIM]
 
-Big drawer (18.5 in wide, 10 boxes), columns left to right:
+Big drawer (18.5 in wide, 8 boxes), columns left to right:
   col1 (5.5): A (5.5x7.375, grown from 5.5x5 min) front, E (5.5x4) back
-  col2 (5):   D (5x6) front, B (5x3.5), F1 tray (5x1.875) back
-  col3 (4.375): C (4.375x4.5, shaved 1/8) front, F2 tray (4.375x1.875),
-                B rotated (3.5x5) + SLIMB (0.875x5) back
+  col2 (5):   D (5x6) front, B1 (5x5.375) back
+  col3 (4.375): C (4.375x6.375) front, B2 (4.375x5) back
   col4 (3.5): BRUSH (3.5 x full length)
 
 Outputs models/vanity_organizer/*.stl (+ .step) and renders/vanity_layout.png
@@ -52,13 +51,11 @@ SIZES = {
     "SLIML": (1.0, 7.375),
     # big drawer
     "A": (5.5, 7.375),       # grown from the 5.5 x 5 minimum
-    "B": (5.0, 3.5),         # one placed straight, one rotated 90
-    "C": (4.375, 4.5),       # requested 4.5 x 4.5, shaved 1/8 for clearance
+    "B1": (5.0, 5.375),      # grown from 5 x 3.5 to fill its column
+    "B2": (4.375, 5.0),      # grown from 5 x 3.5 (rotated) to fill its column
+    "C": (4.375, 6.375),     # grown from 4.5 x 4.5 to fill its column
     "D": (5.0, 6.0),
     "E": (5.5, 4.0),
-    "F1": (5.0, 1.875),      # bonus shallow tray
-    "F2": (4.375, 1.875),    # bonus shallow tray
-    "SLIMB": (0.875, 5.0),   # bonus skinny channel
     "BRUSH": (3.5, FB),      # full-length brush tray
 }
 
@@ -77,9 +74,8 @@ SMALL_DRAWER = [
 ]
 BIG_DRAWER = [
     ("A", 0.0, 0.0), ("E", 0.0, 7.375),
-    ("D", 5.5, 0.0), ("B", 5.5, 6.0), ("F1", 5.5, 9.5),
-    ("C", 10.5, 0.0), ("F2", 10.5, 4.5),
-    ("B", 10.5, 6.375, True), ("SLIMB", 14.0, 6.375),
+    ("D", 5.5, 0.0), ("B1", 5.5, 6.0),
+    ("C", 10.5, 0.0), ("B2", 10.5, 6.375),
     ("BRUSH", 14.875, 0.0),
 ]
 LAYOUTS = {
@@ -136,10 +132,9 @@ def make_box(w_in, fb_in):
 
 def render_layout(path):
     colors = {"DEEP": "#f6a6c1", "BACK": "#b39ddb", "SLIM": "#c5e1a5",
-              "SLIML": "#c5e1a5", "A": "#80cbc4", "B": "#f6a6c1",
-              "C": "#ffcc80", "D": "#b39ddb", "E": "#ffab91",
-              "F1": "#e0e0e0", "F2": "#e0e0e0", "SLIMB": "#c5e1a5",
-              "BRUSH": "#90caf9"}
+              "SLIML": "#c5e1a5", "A": "#80cbc4", "B1": "#f6a6c1",
+              "B2": "#f6a6c1", "C": "#ffcc80", "D": "#b39ddb",
+              "E": "#ffab91", "BRUSH": "#90caf9"}
     fig, axes = plt.subplots(
         1, 2, figsize=(11, 5.4),
         gridspec_kw={"width_ratios": [8, 18.5]})

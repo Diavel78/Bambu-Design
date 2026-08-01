@@ -172,21 +172,19 @@ same handful of sizes fills everything:
 | `box_SLIM.stl`  | 1″ × 4″        | **1×** | skinny back box (liners, pencils) |
 | `box_SLIML.stl` | 1″ × 7.375″    | **1×** | skinny front box |
 
-**Big drawer** (10 boxes):
+**Big drawer** (7 boxes):
 
 | File | Size (W × front-to-back) | Print | Notes |
 |------|--------------------------|-------|-------|
-| `box_A.stl`     | 5.5″ × 7.375″  | **1×** | grown from the 5.5″ × 5″ minimum |
-| `box_B.stl`     | 5″ × 3.5″      | **2×** | one sits straight, one rotated 90° |
-| `box_C.stl`     | 4.375″ × 4.5″  | **1×** | requested 4.5″ × 4.5″, shaved ⅛″ for clearance |
-| `box_D.stl`     | 5″ × 6″        | **1×** | |
-| `box_E.stl`     | 5.5″ × 4″      | **1×** | |
-| `box_F1.stl`    | 5″ × 1.875″    | **1×** | bonus shallow tray (bobby pins) |
-| `box_F2.stl`    | 4.375″ × 1.875″| **1×** | bonus shallow tray |
-| `box_SLIMB.stl` | 0.875″ × 5″    | **1×** | bonus skinny channel |
+| `box_A.stl`     | 5.5″ × 7.375″  | **1×** | front-left bin |
+| `box_B1.stl`    | 5″ × 5.375″    | **1×** | behind D |
+| `box_B2.stl`    | 4.375″ × 5″    | **1×** | behind C |
+| `box_C.stl`     | 4.375″ × 6.375″| **1×** | front bin, 3rd column |
+| `box_D.stl`     | 5″ × 6″        | **1×** | front bin, 2nd column |
+| `box_E.stl`     | 5.5″ × 4″      | **1×** | back-left tray |
 | `box_BRUSH.stl` | 3.5″ × 11.375″ | **1×** | full-length brush tray |
 
-That's **15 boxes total**: 5 in the small drawer, 10 in the big drawer. Each
+That's **12 boxes total**: 5 in the small drawer, 7 in the big drawer. Each
 drawer ends up with ~⅛″ of wiggle room in both directions so the set drops in
 easily but doesn't slide around.
 
