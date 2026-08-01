@@ -13,9 +13,10 @@ All boxes are 2.5 in tall. The kit shares one row system front-to-back
   M      7.875  x 3.5       full-width tray (compacts, palettes)
   L      7.875  x 4.375     big back tray (palettes, bottles)
   LS     3.9375 x 4.375     half-width back bin
+  DEEP   3.9375 x 7.875     tall half-width bin (small drawer front)
   BRUSH  2.625  x 11.375    full-length brush / pencil tray
 
-Small drawer (8 in wide -> one 7.875 col):   [S S] [M] [L]
+Small drawer (8 in wide, 3 boxes): [DEEP DEEP] front, [M] back
 Big drawer (18.5 in wide -> 7.875 + 7.875 + 2.625 cols):
   col1 [S S][M][L]   col2 [M][S S][LS LS]   col3 [BRUSH]
 
@@ -52,6 +53,7 @@ SIZES = {
     "M": (COL_W_SMALL, ROW_FB[0]),
     "L": (COL_W_SMALL, ROW_FB[2]),
     "LS": (COL_W_SMALL / 2, ROW_FB[2]),
+    "DEEP": (COL_W_SMALL / 2, ROW_FB[0] + ROW_FB[2]),
     "BRUSH": (COL_W_BRUSH, sum(ROW_FB)),
 }
 
@@ -61,10 +63,14 @@ DRAWERS = {
 }
 
 # (size, x, y) in inches, x = across the drawer from the left, y = from front
-SMALL_COL = [
+BIG_COL1 = [
     ("S", 0.0, 0.0), ("S", COL_W_SMALL / 2, 0.0),
     ("M", 0.0, ROW_FB[0]),
     ("L", 0.0, ROW_FB[0] + ROW_FB[1]),
+]
+SMALL_DRAWER = [
+    ("DEEP", 0.0, 0.0), ("DEEP", COL_W_SMALL / 2, 0.0),
+    ("M", 0.0, ROW_FB[0] + ROW_FB[2]),
 ]
 BIG_COL2 = [
     ("M", 0.0, 0.0),
@@ -72,9 +78,9 @@ BIG_COL2 = [
     ("LS", 0.0, ROW_FB[0] + ROW_FB[1]), ("LS", COL_W_SMALL / 2, ROW_FB[0] + ROW_FB[1]),
 ]
 LAYOUTS = {
-    "small drawer": SMALL_COL,
+    "small drawer": SMALL_DRAWER,
     "big drawer": (
-        SMALL_COL
+        BIG_COL1
         + [(n, x + COL_W_SMALL, y) for n, x, y in BIG_COL2]
         + [("BRUSH", 2 * COL_W_SMALL, 0.0)]
     ),
@@ -115,7 +121,7 @@ def make_box(w_in, fb_in):
 
 def render_layout(path):
     colors = {"S": "#f6a6c1", "M": "#b39ddb", "L": "#80cbc4",
-              "LS": "#ffcc80", "BRUSH": "#90caf9"}
+              "LS": "#ffcc80", "DEEP": "#f6a6c1", "BRUSH": "#90caf9"}
     fig, axes = plt.subplots(
         1, 2, figsize=(11, 5.4),
         gridspec_kw={"width_ratios": [8, 18.5]})
