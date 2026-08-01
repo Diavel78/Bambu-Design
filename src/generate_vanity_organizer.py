@@ -2,8 +2,8 @@
 """Vanity drawer organizer boxes — a 5-size kit that tiles 3 drawers.
 
 Drawers (interior, inches):
-  * 1x big drawer:    11.5 front-to-back x 18.5 wide
-  * 2x small drawers: 11.5 front-to-back x  8.0 wide
+  * 1x big drawer:   11.5 front-to-back x 18.5 wide
+  * 1x small drawer: 11.5 front-to-back x  8.0 wide
 
 All boxes are 2.5 in tall. The kit shares one row system front-to-back
 (3.5 + 3.5 + 4.375 = 11.375 in) so every drawer uses the same box sizes:
@@ -56,7 +56,7 @@ SIZES = {
 }
 
 DRAWERS = {
-    "small drawer (x2)": (8.0, 11.5),
+    "small drawer": (8.0, 11.5),
     "big drawer": (18.5, 11.5),
 }
 
@@ -72,7 +72,7 @@ BIG_COL2 = [
     ("LS", 0.0, ROW_FB[0] + ROW_FB[1]), ("LS", COL_W_SMALL / 2, ROW_FB[0] + ROW_FB[1]),
 ]
 LAYOUTS = {
-    "small drawer (x2)": SMALL_COL,
+    "small drawer": SMALL_COL,
     "big drawer": (
         SMALL_COL
         + [(n, x + COL_W_SMALL, y) for n, x, y in BIG_COL2]
@@ -117,10 +117,10 @@ def render_layout(path):
     colors = {"S": "#f6a6c1", "M": "#b39ddb", "L": "#80cbc4",
               "LS": "#ffcc80", "BRUSH": "#90caf9"}
     fig, axes = plt.subplots(
-        1, 3, figsize=(14, 5.4),
-        gridspec_kw={"width_ratios": [8, 8, 18.5]})
-    order = ["small drawer (x2)", "small drawer (x2)", "big drawer"]
-    titles = ["Small drawer #1", "Small drawer #2", "Big drawer"]
+        1, 2, figsize=(11, 5.4),
+        gridspec_kw={"width_ratios": [8, 18.5]})
+    order = ["small drawer", "big drawer"]
+    titles = ["Small drawer", "Big drawer"]
     for ax, drawer, title in zip(axes, order, titles):
         dw, dfb = DRAWERS[drawer]
         ax.add_patch(Rectangle((0, 0), dw, dfb, fill=False, lw=2.5,
@@ -153,10 +153,9 @@ def main():
     os.makedirs(out, exist_ok=True)
 
     counts = {}
-    for drawer, layout in LAYOUTS.items():
-        mult = 2 if "x2" in drawer else 1
+    for layout in LAYOUTS.values():
         for name, _, _ in layout:
-            counts[name] = counts.get(name, 0) + mult
+            counts[name] = counts.get(name, 0) + 1
 
     for name, (w, fb) in SIZES.items():
         box = make_box(w, fb)

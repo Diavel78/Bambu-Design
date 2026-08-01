@@ -154,8 +154,8 @@ the layer lines.
 
 ## Vanity drawer organizers (`models/vanity_organizer/`)
 
-A 5-size kit of makeup organizer boxes that tiles all 3 vanity drawers like a
-puzzle — one 11.5″ × 18.5″ big drawer and two 11.5″ × 8″ small drawers. All
+A 5-size kit of makeup organizer boxes that tiles the vanity drawers like a
+puzzle — one 11.5″ × 18.5″ big drawer and one 11.5″ × 8″ small drawer. All
 boxes are **2.5″ tall** and every drawer shares the same row system, so the
 same handful of sizes fills everything:
 
@@ -163,13 +163,13 @@ same handful of sizes fills everything:
 
 | File | Size (W × front-to-back) | Print | Good for |
 |------|--------------------------|-------|----------|
-| `box_S.stl`     | 3.94″ × 3.5″   | **8×** | lip gloss, hair ties, small stuff |
-| `box_M.stl`     | 7.875″ × 3.5″  | **4×** | compacts, blush, mid trays |
-| `box_L.stl`     | 7.875″ × 4.375″| **3×** | palettes, bottles (back row) |
+| `box_S.stl`     | 3.94″ × 3.5″   | **6×** | lip gloss, hair ties, small stuff |
+| `box_M.stl`     | 7.875″ × 3.5″  | **3×** | compacts, blush, mid trays |
+| `box_L.stl`     | 7.875″ × 4.375″| **2×** | palettes, bottles (back row) |
 | `box_LS.stl`    | 3.94″ × 4.375″ | **2×** | half-width back bins |
 | `box_BRUSH.stl` | 2.625″ × 11.375″| **1×** | full-length brush / pencil tray |
 
-That's **18 boxes total**: 4 per small drawer, 10 in the big drawer. Each
+That's **14 boxes total**: 4 in the small drawer, 10 in the big drawer. Each
 drawer ends up with ~⅛″ of wiggle room in both directions so the set drops in
 easily but doesn't slide around.
 
