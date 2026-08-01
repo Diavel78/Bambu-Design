@@ -167,13 +167,14 @@ same handful of sizes fills everything:
 | `box_M.stl`     | 7.875″ × 3.5″  | **2×** | compacts, blush, mid trays |
 | `box_L.stl`     | 7.875″ × 4.375″| **1×** | palettes, bottles (back row) |
 | `box_LS.stl`    | 3.94″ × 4.375″ | **2×** | half-width back bins |
-| `box_DEEP.stl`  | 3.94″ × 7.375″ | **2×** | tall front bins (small drawer) |
+| `box_DEEP.stl`  | 3.4375″ × 7.375″ | **2×** | tall front bins (small drawer) |
 | `box_BACK.stl`  | 6.875″ × 4″    | **1×** | small-drawer back tray |
 | `box_SLIM.stl`  | 1″ × 4″        | **1×** | skinny back box (liners, pencils) |
+| `box_SLIML.stl` | 1″ × 7.375″    | **1×** | skinny front box (small drawer) |
 | `box_BRUSH.stl` | 2.625″ × 11.375″| **1×** | full-length brush / pencil tray |
 
-That's **14 boxes total**: 4 in the small drawer (BACK + SLIM across the back,
-two DEEP bins up front), 10 in the big drawer. Each
+That's **15 boxes total**: 5 in the small drawer (BACK + SLIM across the back;
+two DEEP bins + SLIML up front), 10 in the big drawer. Each
 drawer ends up with ~⅛″ of wiggle room in both directions so the set drops in
 easily but doesn't slide around.
 
