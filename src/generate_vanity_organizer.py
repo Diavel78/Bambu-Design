@@ -1,27 +1,22 @@
 #!/usr/bin/env python3
-"""Vanity drawer organizer boxes — a 5-size kit that tiles 3 drawers.
+"""Vanity drawer organizer boxes — a kit that tiles 2 drawers.
 
 Drawers (interior, inches):
   * 1x big drawer:   11.5 front-to-back x 18.5 wide
   * 1x small drawer: 11.5 front-to-back x  8.0 wide
 
-All boxes are 2.5 in tall. The kit shares one row system front-to-back
-(3.5 + 3.5 + 4.375 = 11.375 in) so every drawer uses the same box sizes:
+All boxes are 2.5 in tall. Each drawer fills to 11.375 x (width - 0.125)
+so the set drops in with ~1/8 in of wiggle room.
 
-  size   W x FB (in)        use
-  S      3.9375 x 3.5       lip gloss, hair ties, small stuff
-  M      7.875  x 3.5       full-width tray (compacts, palettes)
-  L      7.875  x 4.375     big back tray (palettes, bottles)
-  LS     3.9375 x 4.375     half-width back bin
-  DEEP   3.4375 x 7.375     tall bin (small drawer front)
-  BACK   6.875  x 4.0       small-drawer back tray
-  SLIM   1.0    x 4.0       skinny back box (pencils, liners)
-  SLIML  1.0    x 7.375     skinny front box (small drawer)
-  BRUSH  2.625  x 11.375    full-length brush / pencil tray
+Small drawer (8 in wide, 5 boxes):
+  front: [DEEP DEEP SLIML]   back: [BACK SLIM]
 
-Small drawer (8 in wide, 5 boxes): [DEEP DEEP SLIML] front, [BACK SLIM] back
-Big drawer (18.5 in wide -> 7.875 + 7.875 + 2.625 cols):
-  col1 [S S][M][L]   col2 [M][S S][LS LS]   col3 [BRUSH]
+Big drawer (18.5 in wide, 10 boxes), columns left to right:
+  col1 (5.5): A (5.5x7.375, grown from 5.5x5 min) front, E (5.5x4) back
+  col2 (5):   D (5x6) front, B (5x3.5), F1 tray (5x1.875) back
+  col3 (4.375): C (4.375x4.5, shaved 1/8) front, F2 tray (4.375x1.875),
+                B rotated (3.5x5) + SLIMB (0.875x5) back
+  col4 (3.5): BRUSH (3.5 x full length)
 
 Outputs models/vanity_organizer/*.stl (+ .step) and renders/vanity_layout.png
 Run:  python3 src/generate_vanity_organizer.py
@@ -46,21 +41,25 @@ FLOOR = 1.2
 CORNER_R = 4.0             # outer vertical-edge radius
 RIM = 0.6                  # top-rim chamfer so edges aren't sharp
 
-ROW_FB = [3.5, 3.5, 4.375]           # front-to-back row depths, sums 11.375
-COL_W_SMALL = 7.875                  # small-drawer column width
-COL_W_BRUSH = 2.625                  # slim brush-tray column in the big drawer
+FB = 11.375                # front-to-back fill in every drawer
 
 # name -> (width across drawer, front-to-back) in inches
 SIZES = {
-    "S": (COL_W_SMALL / 2, ROW_FB[0]),
-    "M": (COL_W_SMALL, ROW_FB[0]),
-    "L": (COL_W_SMALL, ROW_FB[2]),
-    "LS": (COL_W_SMALL / 2, ROW_FB[2]),
-    "DEEP": (6.875 / 2, 7.375),
+    # small drawer
+    "DEEP": (3.4375, 7.375),
     "BACK": (6.875, 4.0),
     "SLIM": (1.0, 4.0),
     "SLIML": (1.0, 7.375),
-    "BRUSH": (COL_W_BRUSH, sum(ROW_FB)),
+    # big drawer
+    "A": (5.5, 7.375),       # grown from the 5.5 x 5 minimum
+    "B": (5.0, 3.5),         # one placed straight, one rotated 90
+    "C": (4.375, 4.5),       # requested 4.5 x 4.5, shaved 1/8 for clearance
+    "D": (5.0, 6.0),
+    "E": (5.5, 4.0),
+    "F1": (5.0, 1.875),      # bonus shallow tray
+    "F2": (4.375, 1.875),    # bonus shallow tray
+    "SLIMB": (0.875, 5.0),   # bonus skinny channel
+    "BRUSH": (3.5, FB),      # full-length brush tray
 }
 
 DRAWERS = {
@@ -68,42 +67,50 @@ DRAWERS = {
     "big drawer": (18.5, 11.5),
 }
 
-# (size, x, y) in inches, x = across the drawer from the left, y = from front
-BIG_COL1 = [
-    ("S", 0.0, 0.0), ("S", COL_W_SMALL / 2, 0.0),
-    ("M", 0.0, ROW_FB[0]),
-    ("L", 0.0, ROW_FB[0] + ROW_FB[1]),
-]
+# (size, x, y[, rotated]) in inches, x = across the drawer from the left,
+# y = from the front. rotated=True swaps the footprint 90 degrees in place.
 SMALL_DRAWER = [
-    ("DEEP", 0.0, 0.0), ("DEEP", 6.875 / 2, 0.0),
+    ("DEEP", 0.0, 0.0), ("DEEP", 3.4375, 0.0),
     ("SLIML", 6.875, 0.0),
     ("BACK", 0.0, 7.375),
     ("SLIM", 6.875, 7.375),
 ]
-BIG_COL2 = [
-    ("M", 0.0, 0.0),
-    ("S", 0.0, ROW_FB[0]), ("S", COL_W_SMALL / 2, ROW_FB[0]),
-    ("LS", 0.0, ROW_FB[0] + ROW_FB[1]), ("LS", COL_W_SMALL / 2, ROW_FB[0] + ROW_FB[1]),
+BIG_DRAWER = [
+    ("A", 0.0, 0.0), ("E", 0.0, 7.375),
+    ("D", 5.5, 0.0), ("B", 5.5, 6.0), ("F1", 5.5, 9.5),
+    ("C", 10.5, 0.0), ("F2", 10.5, 4.5),
+    ("B", 10.5, 6.375, True), ("SLIMB", 14.0, 6.375),
+    ("BRUSH", 14.875, 0.0),
 ]
 LAYOUTS = {
     "small drawer": SMALL_DRAWER,
-    "big drawer": (
-        BIG_COL1
-        + [(n, x + COL_W_SMALL, y) for n, x, y in BIG_COL2]
-        + [("BRUSH", 2 * COL_W_SMALL, 0.0)]
-    ),
+    "big drawer": BIG_DRAWER,
 }
+
+
+def footprint(entry):
+    name, x, y = entry[0], entry[1], entry[2]
+    w, fb = SIZES[name]
+    if len(entry) > 3 and entry[3]:
+        w, fb = fb, w
+    return name, x, y, w, fb
 
 
 def check_layouts():
     for drawer, (dw, dfb) in DRAWERS.items():
-        for name, x, y in LAYOUTS[drawer]:
-            w, fb = SIZES[name]
+        boxes = [footprint(e) for e in LAYOUTS[drawer]]
+        for name, x, y, w, fb in boxes:
             assert x + w <= dw + 1e-9 and y + fb <= dfb + 1e-9, (drawer, name)
-        area = sum(SIZES[n][0] * SIZES[n][1] for n, _, _ in LAYOUTS[drawer])
-        slack_w = dw - max(x + SIZES[n][0] for n, x, _ in LAYOUTS[drawer])
-        slack_fb = dfb - max(y + SIZES[n][1] for n, _, y in LAYOUTS[drawer])
-        print(f"{drawer}: {len(LAYOUTS[drawer])} boxes, "
+        # no overlaps
+        for i, (n1, x1, y1, w1, f1) in enumerate(boxes):
+            for n2, x2, y2, w2, f2 in boxes[i + 1:]:
+                assert (x1 + w1 <= x2 + 1e-9 or x2 + w2 <= x1 + 1e-9
+                        or y1 + f1 <= y2 + 1e-9 or y2 + f2 <= y1 + 1e-9), \
+                    (drawer, n1, n2)
+        area = sum(w * fb for _, _, _, w, fb in boxes)
+        slack_w = dw - max(x + w for _, x, _, w, _ in boxes)
+        slack_fb = dfb - max(y + fb for _, _, y, _, fb in boxes)
+        print(f"{drawer}: {len(boxes)} boxes, "
               f"fill {area:.2f}/{dw * dfb:.2f} sq-in, "
               f"slack {slack_w:.3f} in across x {slack_fb:.3f} in front-to-back")
 
@@ -128,24 +135,26 @@ def make_box(w_in, fb_in):
 
 
 def render_layout(path):
-    colors = {"S": "#f6a6c1", "M": "#b39ddb", "L": "#80cbc4",
-              "LS": "#ffcc80", "DEEP": "#f6a6c1", "BACK": "#b39ddb",
-              "SLIM": "#c5e1a5", "SLIML": "#c5e1a5", "BRUSH": "#90caf9"}
+    colors = {"DEEP": "#f6a6c1", "BACK": "#b39ddb", "SLIM": "#c5e1a5",
+              "SLIML": "#c5e1a5", "A": "#80cbc4", "B": "#f6a6c1",
+              "C": "#ffcc80", "D": "#b39ddb", "E": "#ffab91",
+              "F1": "#e0e0e0", "F2": "#e0e0e0", "SLIMB": "#c5e1a5",
+              "BRUSH": "#90caf9"}
     fig, axes = plt.subplots(
         1, 2, figsize=(11, 5.4),
         gridspec_kw={"width_ratios": [8, 18.5]})
-    order = ["small drawer", "big drawer"]
-    titles = ["Small drawer", "Big drawer"]
-    for ax, drawer, title in zip(axes, order, titles):
+    for ax, drawer, title in zip(axes, LAYOUTS, ["Small drawer", "Big drawer"]):
         dw, dfb = DRAWERS[drawer]
         ax.add_patch(Rectangle((0, 0), dw, dfb, fill=False, lw=2.5,
                                edgecolor="#444"))
-        for name, x, y in LAYOUTS[drawer]:
-            w, fb = SIZES[name]
+        for entry in LAYOUTS[drawer]:
+            name, x, y, w, fb = footprint(entry)
             ax.add_patch(Rectangle((x, y), w, fb, facecolor=colors[name],
                                    edgecolor="#333", lw=1.2))
-            ax.text(x + w / 2, y + fb / 2, f"{name}\n{w:g}″x{fb:g}″",
-                    ha="center", va="center", fontsize=8.5)
+            rot = 90 if w < 1.5 else 0
+            fs = 7 if min(w, fb) < 2 else 8.5
+            ax.text(x + w / 2, y + fb / 2, f"{name} {w:g}″x{fb:g}″",
+                    ha="center", va="center", fontsize=fs, rotation=rot)
         ax.set_xlim(-0.4, dw + 0.4)
         ax.set_ylim(-0.9, dfb + 0.4)
         ax.set_aspect("equal")
@@ -169,8 +178,8 @@ def main():
 
     counts = {}
     for layout in LAYOUTS.values():
-        for name, _, _ in layout:
-            counts[name] = counts.get(name, 0) + 1
+        for entry in layout:
+            counts[entry[0]] = counts.get(entry[0], 0) + 1
 
     for name, (w, fb) in SIZES.items():
         box = make_box(w, fb)
