@@ -13,10 +13,12 @@ All boxes are 2.5 in tall. The kit shares one row system front-to-back
   M      7.875  x 3.5       full-width tray (compacts, palettes)
   L      7.875  x 4.375     big back tray (palettes, bottles)
   LS     3.9375 x 4.375     half-width back bin
-  DEEP   3.9375 x 7.875     tall half-width bin (small drawer front)
+  DEEP   3.9375 x 7.375     tall half-width bin (small drawer front)
+  BACK   6.875  x 4.0       small-drawer back tray
+  SLIM   1.0    x 4.0       skinny back box (pencils, liners)
   BRUSH  2.625  x 11.375    full-length brush / pencil tray
 
-Small drawer (8 in wide, 3 boxes): [DEEP DEEP] front, [M] back
+Small drawer (8 in wide, 4 boxes): [DEEP DEEP] front, [BACK SLIM] back
 Big drawer (18.5 in wide -> 7.875 + 7.875 + 2.625 cols):
   col1 [S S][M][L]   col2 [M][S S][LS LS]   col3 [BRUSH]
 
@@ -53,7 +55,9 @@ SIZES = {
     "M": (COL_W_SMALL, ROW_FB[0]),
     "L": (COL_W_SMALL, ROW_FB[2]),
     "LS": (COL_W_SMALL / 2, ROW_FB[2]),
-    "DEEP": (COL_W_SMALL / 2, ROW_FB[0] + ROW_FB[2]),
+    "DEEP": (COL_W_SMALL / 2, 7.375),
+    "BACK": (6.875, 4.0),
+    "SLIM": (1.0, 4.0),
     "BRUSH": (COL_W_BRUSH, sum(ROW_FB)),
 }
 
@@ -70,7 +74,8 @@ BIG_COL1 = [
 ]
 SMALL_DRAWER = [
     ("DEEP", 0.0, 0.0), ("DEEP", COL_W_SMALL / 2, 0.0),
-    ("M", 0.0, ROW_FB[0] + ROW_FB[2]),
+    ("BACK", 0.0, 7.375),
+    ("SLIM", 6.875, 7.375),
 ]
 BIG_COL2 = [
     ("M", 0.0, 0.0),
@@ -121,7 +126,8 @@ def make_box(w_in, fb_in):
 
 def render_layout(path):
     colors = {"S": "#f6a6c1", "M": "#b39ddb", "L": "#80cbc4",
-              "LS": "#ffcc80", "DEEP": "#f6a6c1", "BRUSH": "#90caf9"}
+              "LS": "#ffcc80", "DEEP": "#f6a6c1", "BACK": "#b39ddb",
+              "SLIM": "#c5e1a5", "BRUSH": "#90caf9"}
     fig, axes = plt.subplots(
         1, 2, figsize=(11, 5.4),
         gridspec_kw={"width_ratios": [8, 18.5]})
