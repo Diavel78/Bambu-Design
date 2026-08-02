@@ -156,7 +156,7 @@ the layer lines.
 
 A 5-size kit of makeup organizer boxes that tiles the vanity drawers like a
 puzzle — one 11.5″ × 18.5″ big drawer and one 11.5″ × 8″ small drawer. All
-boxes are **2.5″ tall** and every drawer shares the same row system, so the
+boxes are **1.5″ tall** and every drawer shares the same row system, so the
 same handful of sizes fills everything:
 
 ![drawer layout](renders/vanity_layout.png)

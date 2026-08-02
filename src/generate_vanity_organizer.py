@@ -5,7 +5,7 @@ Drawers (interior, inches):
   * 1x big drawer:   11.5 front-to-back x 18.5 wide
   * 1x small drawer: 11.5 front-to-back x  8.0 wide
 
-All boxes are 2.5 in tall. Each drawer fills to 11.375 x (width - 0.125)
+All boxes are 1.5 in tall. Each drawer fills to 11.375 x (width - 0.125)
 so the set drops in with ~1/8 in of wiggle room.
 
 Small drawer (8 in wide, 5 boxes):
@@ -34,7 +34,7 @@ from matplotlib.patches import Rectangle
 IN = 25.4  # mm per inch
 
 # ---------------------------------------------------------------- parameters
-HEIGHT = 2.5 * IN          # 63.5 mm — all boxes
+HEIGHT = 1.5 * IN          # 38.1 mm — all boxes
 WALL = 1.6                 # side wall thickness (4 x 0.4 mm perimeters)
 FLOOR = 1.2
 CORNER_R = 4.0             # outer vertical-edge radius
@@ -158,7 +158,7 @@ def render_layout(path):
                 color="#777")
         ax.axis("off")
     fig.suptitle("Vanity drawer organizer layout — top view "
-                 "(all boxes 2.5″ tall)", fontsize=13)
+                 "(all boxes 1.5″ tall)", fontsize=13)
     fig.tight_layout()
     fig.savefig(path, dpi=150)
     plt.close(fig)
