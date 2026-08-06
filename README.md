@@ -200,10 +200,18 @@ Expect roughly **6–9 hours** and **~110–140 g** of filament.
 ### Hanging it
 
 Two keyhole pockets are recessed into the back, **76 mm apart and level with
-each other**. Put two screws (or drywall anchors) in the wall 76 mm apart, leave
-the heads ~3 mm proud, hook the sign on through the round holes and slide it
-down — the shank locks into the narrow slot. There's a 1.4 mm wall behind each
-pocket, so nothing pokes through the front.
+each other**. Each is a round entry hole with a narrow slot running **upward**
+from it — the sign drops onto the screws, so relative to the sign the screws
+travel up.
+
+1. Two screws or drywall anchors in the wall, 76 mm apart and level, heads left
+   ~3 mm proud.
+2. Hold the sign up so both heads pass through the round holes.
+3. Let it drop — the shanks slide up the slots and the sign hangs off the top of
+   each slot with the heads trapped behind.
+
+Lift ~12 mm to take it back down. There's a 1.4 mm wall behind each pocket, so
+nothing pokes through the front.
 
 Prefer tape? Rerun with `--no-hangers` for a flat back and use Command strips.
 

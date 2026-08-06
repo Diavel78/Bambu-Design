@@ -56,8 +56,10 @@ PLATE_MARGIN  = 5.0    # how far the back plate extends past that halo
 SHADOW = (3.0, -3.0)   # (dx, dy) offset of the back plate -> drop-shadow look
 
 # Keyhole hangers milled into the BACK of the plate (open to the build plate,
-# so they print with no supports). Big hole takes the screw head, narrow slot
-# below it takes the shank once the sign drops down onto the screw.
+# so they print with no supports). The screw head passes through the big hole,
+# then the sign drops -- so relative to the SIGN the screw travels UPWARD, and
+# the narrow shank slot must sit ABOVE the head hole. The sign finally hangs off
+# the top of the slot.
 HANGER = dict(
     head_d   = 9.0,    # screw-head clearance hole
     slot_w   = 5.0,    # shank slot width
@@ -205,11 +207,16 @@ def connect_plate(text_poly, start_margin):
 
 
 def keyhole_poly(cx, cy):
-    """Back-face keyhole: screw-head circle on top, drop-down slot beneath."""
+    """Back-face keyhole, (cx, cy) = center of the screw-head entry hole.
+
+    Slot runs UPWARD from the head hole: the head goes in at (cx, cy), the sign
+    drops, and the shank ends up locked at (cx, cy + slot_len) carrying the
+    weight. A slot running the other way would let the sign fall straight off.
+    """
     head = Point(cx, cy).buffer(HANGER["head_d"] / 2.0, quad_segs=24)
-    slot = box(cx - HANGER["slot_w"] / 2.0, cy - HANGER["slot_len"],
-               cx + HANGER["slot_w"] / 2.0, cy)
-    tip  = Point(cx, cy - HANGER["slot_len"]).buffer(HANGER["slot_w"] / 2.0,
+    slot = box(cx - HANGER["slot_w"] / 2.0, cy,
+               cx + HANGER["slot_w"] / 2.0, cy + HANGER["slot_len"])
+    tip  = Point(cx, cy + HANGER["slot_len"]).buffer(HANGER["slot_w"] / 2.0,
                                                      quad_segs=16)
     return unary_union([head, slot, tip])
 
@@ -227,7 +234,8 @@ def place_hangers(plate_poly):
     clearance = 2.0
     xs = [cx0 - half * HANGER["inset_x"], cx0 + half * HANGER["inset_x"]]
 
-    y = maxy - HANGER["head_d"] / 2.0 - clearance
+    # Highest the head hole can sit while the slot above it stays on the plate.
+    y = maxy - HANGER["slot_len"] - HANGER["slot_w"] / 2.0 - clearance
     while y > miny:
         if all(plate_poly.contains(keyhole_poly(cx, y).buffer(clearance))
                for cx in xs):
@@ -236,7 +244,8 @@ def place_hangers(plate_poly):
 
     # Nowhere works at a shared height (very irregular outline) -- fall back to
     # a single centered hanger rather than hanging the sign crooked.
-    y = maxy - HANGER["head_d"] / 2.0 - clearance
+    # Highest the head hole can sit while the slot above it stays on the plate.
+    y = maxy - HANGER["slot_len"] - HANGER["slot_w"] / 2.0 - clearance
     while y > miny:
         if plate_poly.contains(keyhole_poly(cx0, y).buffer(clearance)):
             return [(cx0, y)]
@@ -329,9 +338,18 @@ def make_zip(name, info):
         HANGING IT
         ----------
         Two keyhole pockets are recessed into the back, {info['span']:.0f} mm apart and level
-        with each other. Put two screws or drywall anchors in the wall {info['span']:.0f} mm
-        apart, leave the heads about 3 mm proud, hook the sign on through the
-        round holes and slide it down -- the shank locks into the narrow slot.
+        with each other. Each one is a round entry hole with a narrow slot
+        running UPWARD from it.
+
+        1. Put two screws or drywall anchors in the wall {info['span']:.0f} mm apart, level,
+           and leave the heads about 3 mm proud.
+        2. Hold the sign against the wall so both screw heads pass through the
+           round holes.
+        3. Let the sign drop. The screw shanks slide up the slots and the sign
+           hangs off the top of each slot, with the heads trapped behind.
+
+        To take it down, lift it about {HANGER['slot_len']:.0f} mm and pull straight off.
+
         There is a {PLATE_H - HANGER['depth']:.1f} mm wall behind each pocket, so nothing reaches
         the front face.
         """)
