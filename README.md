@@ -161,6 +161,9 @@ it hangs on two screws with nothing showing from the front.
 
 ![Elise name plate](renders/nameplate_elise.png)
 
+- **Just want to print it? Grab
+  [`models/nameplate_elise/nameplate_elise.zip`](models/nameplate_elise/nameplate_elise.zip)**
+  — all four STLs plus a `PRINT-ME.txt` cheat-sheet in one download.
 - Folder: **`models/nameplate_elise/`** (same file layout as the charms:
   `_plate` / `_outline` / `_text` / `_combined.stl` / `.step`)
 - Size: **253 × 127 × 9 mm** (the word itself is 230 mm ≈ 9 in wide)

@@ -21,6 +21,8 @@ Designed for a Bambu Lab H2D + AMS (multi-color). Units are millimeters.
 
 import argparse
 import os
+import textwrap
+import zipfile
 
 import cadquery as cq
 from cadquery import Vector, Wire, Face, Solid
@@ -272,6 +274,78 @@ def export(name, bodies):
     print(f"  exported -> models/{name}/")
 
 
+def make_zip(name, info):
+    """Bundle the STLs + a printing cheat-sheet into one importable zip.
+
+    The three color parts have to be imported together to line up, so shipping
+    them as a single zip is the difference between "works" and "which files?".
+    """
+    d = os.path.join(OUT_MODELS, name)
+    readme = textwrap.dedent(f"""\
+        {info['title']}
+        {'=' * len(info['title'])}
+
+        A layered multi-color wall name plate for a Bambu Lab printer.
+
+        Size   : {info['w']:.0f} x {info['h']:.0f} x {info['z']:.1f} mm
+                 (the word itself is {info['word']:.0f} mm wide)
+        Font   : {info['font']}
+        Hangers: {info['hangers']} keyhole slot(s) recessed into the back
+        Fits   : {info['fits']}
+
+        MULTI-COLOR (recommended)
+        -------------------------
+        1. Load 3 filaments. Suggested: deep purple / bright purple / cream.
+        2. Bambu Studio -> File -> Import -> Import 3MF/STL, and select ALL
+           THREE of these at once:
+               {name}_plate.stl
+               {name}_outline.stl
+               {name}_text.stl
+        3. It asks "Load these files as a single object?" -> click YES.
+           They share an origin, so they snap together exactly.
+        4. In the Objects list, expand the object and set each part's filament:
+               _plate   -> deep purple   (back plate + drop shadow)
+               _outline -> bright purple (the halo around the letters)
+               _text    -> cream / white (the letters)
+        5. Slice and print.
+
+        SINGLE COLOR
+        ------------
+        Import {name}_combined.stl on its own. Nothing else needed.
+
+        PRINT SETTINGS
+        --------------
+        Material    : PLA
+        Layer height: 0.2 mm
+        Walls       : 3
+        Infill      : 10-15% gyroid
+        Supports    : OFF  (every layer sits on the one below it)
+        Orientation : flat, as loaded -- letters up, back on the build plate
+
+        Only TWO filament changes for the whole print: the colors are stacked as
+        three clean height bands (plate 0-4 mm, halo 4-6 mm, letters 6-9 mm), so
+        purge waste stays around 20 g.
+
+        HANGING IT
+        ----------
+        Two keyhole pockets are recessed into the back, {info['span']:.0f} mm apart and level
+        with each other. Put two screws or drywall anchors in the wall {info['span']:.0f} mm
+        apart, leave the heads about 3 mm proud, hook the sign on through the
+        round holes and slide it down -- the shank locks into the narrow slot.
+        There is a {PLATE_H - HANGER['depth']:.1f} mm wall behind each pocket, so nothing reaches
+        the front face.
+        """)
+
+    zpath = os.path.join(d, f"{name}.zip")
+    with zipfile.ZipFile(zpath, "w", zipfile.ZIP_DEFLATED) as z:
+        for part in ("plate", "outline", "text", "combined"):
+            f = os.path.join(d, f"{name}_{part}.stl")
+            z.write(f, os.path.basename(f))
+        z.writestr("PRINT-ME.txt", readme)
+    mb = os.path.getsize(zpath) / 1e6
+    print(f"  zipped   -> models/{name}/{name}.zip ({mb:.1f} MB)")
+
+
 # --------------------------------------------------------------------------- #
 # Preview: fake-3D by stacking each layer's outline as offset "side wall" copies
 # --------------------------------------------------------------------------- #
@@ -370,6 +444,11 @@ def main():
     print(f"  fits on: {', '.join(fits) if fits else 'NO Bambu bed -- reduce --width'}")
 
     export(out_name, bodies)
+    span = abs(hangers[0][0] - hangers[-1][0]) if len(hangers) > 1 else 0.0
+    make_zip(out_name, dict(
+        title=f"{args.name} -- wall name plate", font=args.font,
+        word=args.width, w=w, h=h, z=total_z, hangers=len(hangers),
+        span=span, fits=", ".join(fits) if fits else "no Bambu bed as-is"))
     render_preview(out_name, polys, hangers, PALETTES[args.colors])
 
 
