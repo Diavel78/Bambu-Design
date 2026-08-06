@@ -152,6 +152,81 @@ the layer lines.
 
 ---
 
+## Wall name plate ("Elise")
+
+A big layered bubble-letter sign for a bedroom wall — deep purple back plate
+with a drop shadow, a bright purple halo hugging the letters, and chunky cream
+letters standing proud on top. **Keyhole hangers are built into the back**, so
+it hangs on two screws with nothing showing from the front.
+
+![Elise name plate](renders/nameplate_elise.png)
+
+- Folder: **`models/nameplate_elise/`** (same file layout as the charms:
+  `_plate` / `_outline` / `_text` / `_combined.stl` / `.step`)
+- Size: **253 × 127 × 9 mm** (the word itself is 230 mm ≈ 9 in wide)
+- Font: **Chewy** — the closest free match to the inspiration photo
+- Fits the **H2D** bed in one piece. For a 256 mm bed (X1C / P1S / A1) rerun
+  with `--width 200`.
+
+### Printing it
+
+The three colors are stacked as three clean height bands — plate `0–4 mm`, halo
+`4–6 mm`, letters `6–9 mm` — which means the whole sign needs only **two
+filament changes**, not one per layer. Purge waste stays around 20 g instead of
+several hundred.
+
+1. Load **deep purple**, **bright purple**, and **cream/white** into the AMS.
+2. **File → Import → Import 3MF/STL…**, select all three
+   `nameplate_elise_{plate,outline,text}.stl` at once → **"Load as a single
+   object?" → Yes**. They're modeled on the same origin so they snap together.
+3. Assign filaments per part: `_plate` → deep purple, `_outline` → bright
+   purple, `_text` → cream.
+4. Slice and print. Single color instead? Just import `_combined.stl`.
+
+| Setting | Value | Why |
+|---|---|---|
+| Material | **PLA** | Cheap, stiff, great colors |
+| Layer height | **0.2 mm** | It's big — no need to go finer |
+| Walls | **3** | Plenty; the sign is mostly hollow |
+| Infill | **10–15% gyroid** | Keeps it light on the wall |
+| Supports | **Off** | Every layer sits on the one below it |
+| Orientation | **Flat, as loaded** | Letters up, back on the plate |
+
+Expect roughly **6–9 hours** and **~110–140 g** of filament.
+
+### Hanging it
+
+Two keyhole pockets are recessed into the back, **76 mm apart and level with
+each other**. Put two screws (or drywall anchors) in the wall 76 mm apart, leave
+the heads ~3 mm proud, hook the sign on through the round holes and slide it
+down — the shank locks into the narrow slot. There's a 1.4 mm wall behind each
+pocket, so nothing pokes through the front.
+
+Prefer tape? Rerun with `--no-hangers` for a flat back and use Command strips.
+
+### Want it different?
+
+Everything is parametric — pick a different name, font, size, or palette:
+
+```bash
+python3 src/generate_nameplate.py --name Elise --font TitanOne
+python3 src/generate_nameplate.py --name Elise --width 300 --colors teal
+python3 src/generate_nameplate.py --name Elise --no-hangers
+python3 src/render_nameplate_options.py --name Elise   # the two sheets below
+```
+
+Seven bubbly fonts and six palettes are built in — see
+[`renders/nameplate_font_options.png`](renders/nameplate_font_options.png) and
+[`renders/nameplate_color_options.png`](renders/nameplate_color_options.png).
+
+![font options](renders/nameplate_font_options.png)
+
+The script always checks that the letters actually **fuse into one piece** (it
+grows the plate margin automatically if they don't) and tells you which Bambu
+beds the result fits on.
+
+---
+
 ## Credits / license
 
 - Font: **UnifrakturCook** by Peter Wiegel / GFOS, licensed under the
