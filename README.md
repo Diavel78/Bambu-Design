@@ -152,6 +152,78 @@ the layer lines.
 
 ---
 
+## Drawer organizer bins (26" x 16.4" x 2" deep)
+
+Open-top bins that tile the drawer from the sketch: a narrow left column split
+in two, and a wide right column split into four.
+
+![drawer layout](renders/drawer_layout.png)
+![bins in place](renders/drawer_bins_3d.png)
+
+**Files:** `models/drawer_boxes/` — one `bin_<id>.stl` + `.step` per bin,
+`drawer_assembly.step` (everything positioned in the drawer), and
+[`PRINT_LIST.md`](models/drawer_boxes/PRINT_LIST.md) with every size and a
+filament estimate.
+
+### The catch: the long compartments don't fit on the plate
+
+Compartments **C3–C6 are 19.5" long** (495 mm). No printer takes that — the H2D
+plate is 350 x 320 mm. So each of those is **two identical 9.75" bins that sit
+end to end** in the drawer. Butted together they read as one long compartment,
+and they're easier to lift out and empty than one huge tray would be.
+
+That's **10 bins total**, about **1.3 kg of filament** — call it 3 spools with
+waste, and a couple of days of printing. Worth knowing before you start.
+
+| Print | Bin | Size | Qty |
+|---|---|---|---|
+| C1 | `bin_C1.stl` | 6.5" x 7.4" | 1 |
+| C2 | `bin_C2.stl` | 6.5" x 9.0" | 1 |
+| C3 | `bin_C3-1.stl` | 9.75" x 3.4" | 2 |
+| C4 | `bin_C4-1.stl` | 9.75" x 4.0" | 2 |
+| C5 | `bin_C5-1.stl` | 9.75" x 4.0" | 2 |
+| C6 | `bin_C6-1.stl` | 9.75" x 5.0" | 2 |
+
+The `-1` and `-2` files of a pair are identical, so just print the `-1` twice.
+
+### Print settings
+
+| Setting | Value | Why |
+|---|---|---|
+| Material | **PLA** (PETG if the drawer gets hot) | Cheap and stiff enough |
+| Layer height | **0.20–0.28 mm** | These are big and plain — go fast |
+| Walls | **3** | Walls are 2 mm, so 3 loops fills them solid |
+| Infill | **10%** | Barely any — it's nearly all wall and floor |
+| Supports | **Off** | Flat-bottomed open boxes |
+| Orientation | **As loaded** (open side up) | No supports, clean rim |
+
+Bins are **48 mm tall** (2" minus clearance) and sized **0.8 mm under** their
+slot, so the whole set drops in without fighting the drawer.
+
+### Measure before you print
+
+The sizes come straight off the sketch, and two things are worth checking with a
+tape measure first:
+
+- **16.4" front-to-back** — if that was meant to be 16¼", say so and I'll rerun.
+- **The divider positions.** The sketch isn't to scale, so I read the splits off
+  the proportions: left column 6.5" wide, rows 3.4" / 4.0" / 4.0" / 5.0" front
+  to back. Tell me the real numbers, or what's going in each bin, and I'll
+  redraw the layout.
+
+Everything is parametric in `src/generate_drawer_boxes.py` — the `DRAWER_*` and
+`LAYOUT` blocks at the top are the whole design:
+
+```bash
+pip install cadquery matplotlib trimesh
+python3 src/generate_drawer_boxes.py
+```
+
+Change a number, re-run, and it re-splits the compartments to fit the plate,
+re-exports every bin, and redraws both pictures.
+
+---
+
 ## Credits / license
 
 - Font: **UnifrakturCook** by Peter Wiegel / GFOS, licensed under the
