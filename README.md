@@ -152,10 +152,10 @@ the layer lines.
 
 ---
 
-## Drawer organizer bins (26" x 16.4" x 2" deep)
+## Drawer organizer bins (20" x 16.4" x 2" deep)
 
-Open-top bins that tile the drawer from the sketch: a narrow left column split
-in two, and a wide right column split into four.
+Open-top bins that tile the drawer from the sketch — **8 compartments**: four
+6" x 8.2" boxes (two columns of two) and four 8" x 4.1" boxes down one end.
 
 ![drawer layout](renders/drawer_layout.png)
 ![bins in place](renders/drawer_bins_3d.png)
@@ -165,26 +165,22 @@ in two, and a wide right column split into four.
 [`PRINT_LIST.md`](models/drawer_boxes/PRINT_LIST.md) with every size and a
 filament estimate.
 
-### The catch: the long compartments don't fit on the plate
+### Only 2 models to print
 
-Compartments **C3–C6 are 19.5" long** (495 mm). No printer takes that — the H2D
-plate is 350 x 320 mm. So each of those is **two identical 9.75" bins that sit
-end to end** in the drawer. Butted together they read as one long compartment,
-and they're easier to lift out and empty than one huge tray would be.
+Every bin fits the H2D plate in one piece, and there are only **two distinct
+sizes** — so it's two STLs, printed four times each.
 
-That's **10 bins total**, about **1.3 kg of filament** — call it 3 spools with
-waste, and a couple of days of printing. Worth knowing before you start.
-
-| Print | Bin | Size | Qty |
+| Print this | Size | Qty | Fills |
 |---|---|---|---|
-| C1 | `bin_C1.stl` | 6.5" x 7.4" | 1 |
-| C2 | `bin_C2.stl` | 6.5" x 9.0" | 1 |
-| C3 | `bin_C3-1.stl` | 9.75" x 3.4" | 2 |
-| C4 | `bin_C4-1.stl` | 9.75" x 4.0" | 2 |
-| C5 | `bin_C5-1.stl` | 9.75" x 4.0" | 2 |
-| C6 | `bin_C6-1.stl` | 9.75" x 5.0" | 2 |
+| `bin_A1.stl` | 6" x 8.2" (152 x 208 mm) | **4x** | A1, A2, B1, B2 |
+| `bin_C1.stl` | 8" x 4.1" (202 x 103 mm) | **4x** | C1, C2, C3, C4 |
 
-The `-1` and `-2` files of a pair are identical, so just print the `-1` twice.
+That's **8 bins, about 1.0 kg of filament** — 2 spools with waste, and a day or
+two of printing. Each bin is also exported under its own name (`bin_A2`,
+`bin_B1`, …) if you'd rather load all 8 and slice one big plate.
+
+The math checks out against the sketch: 6" + 6" + 8" = **20"** along the drawer,
+8.2" + 8.2" = **16.4"** across, and 4 x 4.1" = **16.4"** for the end column.
 
 ### Print settings
 
@@ -200,27 +196,34 @@ The `-1` and `-2` files of a pair are identical, so just print the `-1` twice.
 Bins are **48 mm tall** (2" minus clearance) and sized **0.8 mm under** their
 slot, so the whole set drops in without fighting the drawer.
 
-### Measure before you print
+### Changing the layout
 
-The sizes come straight off the sketch, and two things are worth checking with a
-tape measure first:
+It's all parametric — `DRAWER_*` and `LAYOUT` at the top of
+`src/generate_drawer_boxes.py` are the entire design. Columns run along the
+drawer, rows run across it:
 
-- **16.4" front-to-back** — if that was meant to be 16¼", say so and I'll rerun.
-- **The divider positions.** The sketch isn't to scale, so I read the splits off
-  the proportions: left column 6.5" wide, rows 3.4" / 4.0" / 4.0" / 5.0" front
-  to back. Tell me the real numbers, or what's going in each bin, and I'll
-  redraw the layout.
+```python
+DRAWER_W = 20.0   # along the drawer
+DRAWER_D = 16.4   # across the drawer
+DRAWER_H = 2.0
 
-Everything is parametric in `src/generate_drawer_boxes.py` — the `DRAWER_*` and
-`LAYOUT` blocks at the top are the whole design:
+LAYOUT = [
+    dict(name="A", width=6.0, rows=[8.2, 8.2]),
+    dict(name="B", width=6.0, rows=[8.2, 8.2]),
+    dict(name="C", width=8.0, rows=[4.1, 4.1, 4.1, 4.1]),
+]
+```
 
 ```bash
 pip install cadquery matplotlib trimesh
 python3 src/generate_drawer_boxes.py
 ```
 
-Change a number, re-run, and it re-splits the compartments to fit the plate,
-re-exports every bin, and redraws both pictures.
+Re-run and it re-exports every bin and redraws both pictures in a few seconds.
+It refuses to build if the columns or rows don't add up to the drawer, and any
+compartment too big for the build plate is automatically split into equal bins
+that sit end to end — so you can ask for a 20"-long box and still get something
+printable.
 
 ---
 

@@ -33,15 +33,16 @@ from cadquery import exporters
 MM = 25.4  # inches -> mm
 
 # The drawer being filled (inches), straight off the sketch.
-DRAWER_W = 26.0   # left-to-right
-DRAWER_D = 16.4   # front-to-back
-DRAWER_H = 2.0    # "2 inches Deep"
+DRAWER_W = 20.0   # along the drawer
+DRAWER_D = 16.4   # across the drawer
+DRAWER_H = 2.0    # "2" deep"
 
-# The sketch layout: two columns, each split into rows (top of sketch first).
-# Row heights within a column must sum to DRAWER_D.
+# The sketch layout: columns across the 20", each split into rows.
+# Column widths must sum to DRAWER_W; each column's rows must sum to DRAWER_D.
 LAYOUT = [
-    dict(name="L", width=6.5,  rows=[7.4, 9.0]),
-    dict(name="R", width=19.5, rows=[3.4, 4.0, 4.0, 5.0]),
+    dict(name="A", width=6.0, rows=[8.2, 8.2]),
+    dict(name="B", width=6.0, rows=[8.2, 8.2]),
+    dict(name="C", width=8.0, rows=[4.1, 4.1, 4.1, 4.1]),
 ]
 
 # Printer build volume (mm). Bambu Lab H2D = 350 x 320 x 325.
@@ -72,15 +73,21 @@ def compartments(layout, drawer_d):
     Origin is the front-left corner of the drawer; y grows toward the back, so
     the first row of a column (top of the sketch) lands at the back.
     """
+    total_w = sum(c["width"] for c in layout)
+    if abs(total_w - DRAWER_W) > 1e-6:
+        raise ValueError(f"columns sum to {total_w}\", drawer is {DRAWER_W}\"")
+
     out = []
     x = 0.0
-    n = 0
     for col in layout:
+        if abs(sum(col["rows"]) - drawer_d) > 1e-6:
+            raise ValueError(f"column {col['name']} rows sum to "
+                             f"{sum(col['rows'])}\", drawer is {drawer_d}\"")
         y = drawer_d
-        for h in col["rows"]:
-            n += 1
+        for i, h in enumerate(col["rows"], start=1):
             y -= h
-            out.append(dict(id=f"C{n}", comp_id=f"C{n}", col=col["name"],
+            cid = f"{col['name']}{i}"
+            out.append(dict(id=cid, comp_id=cid, col=col["name"],
                             x=x, y=y, w=col["width"], d=h))
         x += col["width"]
     return out
@@ -157,6 +164,11 @@ def build(args):
     os.makedirs(OUT_MODELS, exist_ok=True)
     os.makedirs(OUT_RENDER, exist_ok=True)
 
+    # Clear bins from a previous layout so stale files can't get printed.
+    for f in os.listdir(OUT_MODELS):
+        if f.startswith("bin_") and f.endswith((".stl", ".step")):
+            os.remove(os.path.join(OUT_MODELS, f))
+
     comps, bins = plan()
     bin_h = DRAWER_H * MM - LID_GAP
 
@@ -193,7 +205,7 @@ def build(args):
     write_print_list(rows, comps, bin_h, total_g)
     if not args.no_render:
         render_plan(comps, bins)
-        render_3d(bins)
+        render_3d(comps, bins)
     print(f"\n  {len(rows)} bins, ~{total_g:.0f} g of filament total")
     print(f"  models -> {os.path.normpath(OUT_MODELS)}")
 
@@ -222,23 +234,36 @@ def write_print_list(rows, comps, bin_h, total_g):
         how = "1 bin" if n == 1 else f"{n} bins end to end"
         lines.append(f"| {c['id']} | {c['w']}\" x {c['d']}\" | {how} |")
 
-    lines += [
-        "",
-        "## Bins to print",
-        "",
-        "| Bin | Footprint (in) | Footprint (mm) | Approx. filament |",
-        "|---|---|---|---|",
-    ]
+    # Group identical footprints -- one STL printed N times.
+    groups = {}
     for r in rows:
-        lines.append(f"| `bin_{r['id']}.stl` | {r['w_in']:.2f} x {r['d_in']:.2f} "
-                     f"| {r['w_mm']:.1f} x {r['d_mm']:.1f} | ~{r['g']:.0f} g |")
+        key = (round(r["w_mm"], 2), round(r["d_mm"], 2))
+        groups.setdefault(key, []).append(r)
+
     lines += [
         "",
-        f"**Total: {len(rows)} bins, ~{total_g:.0f} g "
-        f"(~{total_g / 1000:.1f} kg) of filament.**",
+        "## What to print",
         "",
-        "Bins of the same size are interchangeable — print one STL as many times "
-        "as you need.",
+        "Bins of the same size are the same model — print the one STL as many "
+        "times as the quantity says.",
+        "",
+        "| Print this | Size (in) | Size (mm) | Qty | Fills | Filament |",
+        "|---|---|---|---|---|---|",
+    ]
+    for g in groups.values():
+        first = g[0]
+        fills = ", ".join(sorted({r["comp"] for r in g}))
+        lines.append(
+            f"| `bin_{first['id']}.stl` | {first['w_in']:.2f} x {first['d_in']:.2f} "
+            f"| {first['w_mm']:.1f} x {first['d_mm']:.1f} | **{len(g)}x** "
+            f"| {fills} | ~{first['g'] * len(g):.0f} g |")
+    lines += [
+        "",
+        f"**Total: {len(rows)} bins from {len(groups)} unique models, "
+        f"~{total_g:.0f} g (~{total_g / 1000:.1f} kg) of filament.**",
+        "",
+        "Every bin is also exported individually (`bin_A1`, `bin_A2`, …) if you'd "
+        "rather load them all and slice one plate.",
         "",
     ]
     path = os.path.join(OUT_MODELS, "PRINT_LIST.md")
@@ -256,7 +281,8 @@ def render_plan(comps, bins):
     from matplotlib.patches import Rectangle
 
     fig, ax = plt.subplots(figsize=(13, 8.8))
-    palette = ["#dbe9f6", "#e6f0dc", "#fbe7d5", "#ece0f2", "#d9efee", "#fae3e6"]
+    palette = ["#dbe9f6", "#e6f0dc", "#fbe7d5", "#ece0f2",
+               "#d9efee", "#fae3e6", "#f6f0cd", "#e6ded6"]
 
     ax.add_patch(Rectangle((0, 0), DRAWER_W, DRAWER_D, facecolor="#f7f7f7",
                            edgecolor="#222", lw=2.5, zorder=0))
@@ -309,7 +335,7 @@ def render_plan(comps, bins):
     print(f"  plan   -> {os.path.normpath(path)}")
 
 
-def render_3d(bins):
+def render_3d(comps, bins):
     """Isometric preview of every bin sitting in the drawer, from the STLs."""
     import matplotlib
     matplotlib.use("Agg")
@@ -318,9 +344,10 @@ def render_3d(bins):
     import trimesh
     from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
-    base = {"C1": (0.42, 0.60, 0.78), "C2": (0.55, 0.70, 0.42),
-            "C3": (0.90, 0.62, 0.33), "C4": (0.62, 0.48, 0.76),
-            "C5": (0.35, 0.68, 0.66), "C6": (0.85, 0.44, 0.48)}
+    wheel = [(0.42, 0.60, 0.78), (0.55, 0.70, 0.42), (0.90, 0.62, 0.33),
+             (0.62, 0.48, 0.76), (0.35, 0.68, 0.66), (0.85, 0.44, 0.48),
+             (0.45, 0.55, 0.85), (0.80, 0.70, 0.35)]
+    base = {c["id"]: wheel[i % len(wheel)] for i, c in enumerate(comps)}
     light = np.array([0.42, -0.55, 0.72])
     light /= np.linalg.norm(light)
 
