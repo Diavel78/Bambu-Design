@@ -229,6 +229,12 @@ def build(args):
           f"~{total_g:.0f} g of filament total")
     print(f"  models -> {os.path.normpath(OUT_MODELS)}")
 
+    if not args.no_zip:
+        # The zip is the deliverable -- always build it, never make it an ask.
+        import make_zip
+        print("\n  Packaging for delivery:")
+        make_zip.main([])
+
 
 # --------------------------------------------------------------------------- #
 # Bambu Studio plates (.3mf)
@@ -569,6 +575,8 @@ def main():
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--no-render", action="store_true",
                    help="skip the PNG plan (no matplotlib needed)")
+    p.add_argument("--no-zip", action="store_true",
+                   help="skip building the delivery zip")
     p.add_argument("--printer", default=PRINTER, choices=sorted(PRINTERS),
                    help="build plate to arrange the .3mf plates for "
                         f"(default: {PRINTER})")
