@@ -27,4 +27,15 @@ Bins of the same size are the same model — print the one STL as many times as 
 
 **Total: 8 bins from 2 unique models, ~1014 g (~1.0 kg) of filament.**
 
-Every bin is also exported individually (`bin_A1`, `bin_A2`, …) if you'd rather load them all and slice one plate.
+## Straight into Bambu Studio
+
+`bambu/` holds one **.3mf per build plate**, already arranged for the **H2D** (350 x 320 mm). Open one, pick your filament, slice, print. No arranging needed.
+
+| Plate file | Holds | Fills |
+|---|---|---|
+| `bambu/plate_1_bin_A1_x2.3mf` | 2 x `bin_A1.stl` | A1, A2 |
+| `bambu/plate_2_bin_A1_x2.3mf` | 2 x `bin_A1.stl` | B1, B2 |
+| `bambu/plate_3_bin_C1_x2.3mf` | 2 x `bin_C1.stl` (rotated to fit) | C1, C2 |
+| `bambu/plate_4_bin_C1_x2.3mf` | 2 x `bin_C1.stl` (rotated to fit) | C3, C4 |
+
+Prefer to arrange yourself? Every bin is also exported as its own `bin_<id>.stl` and `.step`.

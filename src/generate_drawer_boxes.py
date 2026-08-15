@@ -2,22 +2,26 @@
 """
 Generate a set of open-top organizer bins that tile a drawer.
 
-Default layout is the hand-drawn sketch: a 26" x 16.4" drawer, 2" deep, split
-into 6 compartments -- a narrow left column of 2, and a wide right column of 4.
+Default layout is the hand-drawn sketch: a 20" x 16.4" drawer, 2" deep, split
+into 8 compartments -- two 6" columns of two, then an 8" column of four.
 
-Because a 19.5"-long compartment does not fit on any printer, every compartment
-is automatically sliced into equal end-to-end segments that DO fit the build
-plate. Each segment is one printable bin; segments sit end to end in the drawer
-and read as one long compartment.
+Any compartment too big for the build plate is automatically sliced into equal
+segments that DO fit. Each segment is one printable bin, and segments sit end to
+end in the drawer so they read as one long compartment.
 
 Output (all in mm, the unit slicers expect):
   - models/drawer_boxes/bin_<id>.stl     one per printable bin
   - models/drawer_boxes/bin_<id>.step    editable CAD
+  - models/drawer_boxes/bambu/plate_*.3mf  ready-to-slice Bambu Studio plates
   - models/drawer_boxes/drawer_assembly.step   every bin, positioned in the drawer
   - models/drawer_boxes/PRINT_LIST.md    what to print, how many, est. filament
   - renders/drawer_layout.png            top-down plan of the drawer
+  - renders/drawer_bins_3d.png           the bins in place
 
 Everything is parametric -- edit the CONFIG block (or pass CLI flags) and re-run.
+
+    python3 generate_drawer_boxes.py                # H2D plates
+    python3 generate_drawer_boxes.py --printer x1c  # 256 x 256 plates
 """
 
 import argparse
@@ -45,9 +49,19 @@ LAYOUT = [
     dict(name="C", width=8.0, rows=[4.1, 4.1, 4.1, 4.1]),
 ]
 
-# Printer build volume (mm). Bambu Lab H2D = 350 x 320 x 325.
-PLATE_X, PLATE_Y, PLATE_Z = 350.0, 320.0, 325.0
+# Printer build volume (mm). Pick with --printer; H2D is the default.
+PRINTERS = {
+    "h2d":    (350.0, 320.0, 325.0),
+    "x1c":    (256.0, 256.0, 256.0),
+    "p1s":    (256.0, 256.0, 256.0),
+    "p1p":    (256.0, 256.0, 256.0),
+    "a1":     (256.0, 256.0, 256.0),
+    "a1mini": (180.0, 180.0, 180.0),
+}
+PRINTER = "h2d"
+PLATE_X, PLATE_Y, PLATE_Z = PRINTERS[PRINTER]
 PLATE_MARGIN = 8.0     # keep bins off the very edge of the plate
+PLATE_SPACING = 6.0    # gap between bins arranged on the same plate
 
 # Bin construction (mm).
 WALL       = 2.0       # side wall thickness
@@ -202,15 +216,149 @@ def build(args):
               f"{w_mm:>6.1f} x {d_mm:>5.1f} x {bin_h:.1f} mm   ~{g:.0f} g")
 
     assy.save(os.path.join(OUT_MODELS, "drawer_assembly.step"))
-    write_print_list(rows, comps, bin_h, total_g)
+
+    print(f"\n  Bambu Studio plates ({PRINTER.upper()}, "
+          f"{PLATE_X:.0f} x {PLATE_Y:.0f} mm):")
+    plates = export_plates(rows)
+
+    write_print_list(rows, comps, bin_h, total_g, plates)
     if not args.no_render:
         render_plan(comps, bins)
         render_3d(comps, bins)
-    print(f"\n  {len(rows)} bins, ~{total_g:.0f} g of filament total")
+    print(f"\n  {len(rows)} bins on {len(plates)} plates, "
+          f"~{total_g:.0f} g of filament total")
     print(f"  models -> {os.path.normpath(OUT_MODELS)}")
 
 
-def write_print_list(rows, comps, bin_h, total_g):
+# --------------------------------------------------------------------------- #
+# Bambu Studio plates (.3mf)
+# --------------------------------------------------------------------------- #
+def grid_fit(w, d):
+    """How many of one bin size fit on a plate, and in which orientation."""
+    ux, uy = PLATE_X - 2 * PLATE_MARGIN, PLATE_Y - 2 * PLATE_MARGIN
+    sp = PLATE_SPACING
+    best = None
+    for a, b, rot in ((w, d, False), (d, w, True)):
+        nx = int((ux + sp) // (a + sp))
+        ny = int((uy + sp) // (b + sp))
+        if nx >= 1 and ny >= 1 and (best is None or nx * ny > best[0]):
+            best = (nx * ny, nx, ny, a, b, rot)
+    if best is None:
+        raise ValueError(f"a {w:.1f} x {d:.1f} mm bin does not fit the plate")
+    return best
+
+
+def grid_positions(n, nx, a, b):
+    """Bed centres for n bins in a row-major grid, centred on the plate."""
+    sp = PLATE_SPACING
+    cols = min(n, nx)
+    rows_used = math.ceil(n / nx)
+    block_w = cols * a + (cols - 1) * sp
+    block_d = rows_used * b + (rows_used - 1) * sp
+    x0 = PLATE_X / 2 - block_w / 2 + a / 2
+    y0 = PLATE_Y / 2 - block_d / 2 + b / 2
+    return [(x0 + (i % nx) * (a + sp), y0 + (i // nx) * (b + sp))
+            for i in range(n)]
+
+
+def export_plates(rows):
+    """Write one ready-to-slice .3mf per build plate."""
+    import trimesh
+    from threemf import write_3mf
+
+    out_dir = os.path.join(OUT_MODELS, "bambu")
+    os.makedirs(out_dir, exist_ok=True)
+    for f in os.listdir(out_dir):
+        if f.endswith(".3mf"):
+            os.remove(os.path.join(out_dir, f))
+
+    groups = {}
+    for r in rows:
+        groups.setdefault((round(r["w_mm"], 2), round(r["d_mm"], 2)), []).append(r)
+
+    plates, n = [], 0
+    for (w, d), members in groups.items():
+        cap, nx, _ny, a, b, rot = grid_fit(w, d)
+        rep = members[0]["id"]
+        mesh = trimesh.load(os.path.join(OUT_MODELS, f"bin_{rep}.stl"))
+        if rot:
+            mesh = mesh.copy()
+            mesh.apply_transform(trimesh.transformations.rotation_matrix(
+                math.pi / 2, [0, 0, 1]))
+        key = f"bin_{rep}"
+
+        # Spread evenly over the fewest plates rather than filling each to the
+        # brim -- 2 + 2 beats 3 + 1 for a lonely last print.
+        n_plates = math.ceil(len(members) / cap)
+        per = math.ceil(len(members) / n_plates)
+
+        for i in range(0, len(members), per):
+            chunk = members[i:i + per]
+            n += 1
+            name = f"plate_{n}_{key}_x{len(chunk)}.3mf"
+            path = os.path.join(out_dir, name)
+            write_3mf(path, {key: mesh},
+                      [(key, x, y) for x, y in grid_positions(len(chunk), nx, a, b)],
+                      title=f"{key} x{len(chunk)}")
+            plates.append(dict(file=name, bin=key, qty=len(chunk),
+                               fills=[c["comp"] for c in chunk],
+                               rotated=rot))
+            print(f"  {name:<34} {len(chunk)} x {key}"
+                  f"{'  (rotated 90deg to fit)' if rot else ''}")
+
+    verify_plates(out_dir, plates)
+    return plates
+
+
+def verify_plates(out_dir, plates):
+    """Re-read every .3mf and prove it's valid and inside the build volume.
+
+    Parsed with the stdlib rather than a mesh library, so this checks the bytes
+    that actually got written -- indices in range, one item per bin, nothing
+    hanging off the plate.
+    """
+    import xml.etree.ElementTree as ET
+    import zipfile
+    from threemf import NS
+
+    tag = lambda t: f"{{{NS}}}{t}"  # noqa: E731
+
+    for p in plates:
+        with zipfile.ZipFile(os.path.join(out_dir, p["file"])) as z:
+            missing = {"[Content_Types].xml", "_rels/.rels", "3D/3dmodel.model"}
+            missing -= set(z.namelist())
+            if missing:
+                raise ValueError(f"{p['file']}: missing {sorted(missing)}")
+            root = ET.fromstring(z.read("3D/3dmodel.model"))
+
+        objects = {}
+        for o in root.iter(tag("object")):
+            verts = [(float(v.get("x")), float(v.get("y")), float(v.get("z")))
+                     for v in o.iter(tag("vertex"))]
+            for t in o.iter(tag("triangle")):
+                for k in ("v1", "v2", "v3"):
+                    if not 0 <= int(t.get(k)) < len(verts):
+                        raise ValueError(f"{p['file']}: triangle index out of range")
+            objects[o.get("id")] = verts
+
+        items = list(root.iter(tag("item")))
+        if len(items) != p["qty"]:
+            raise ValueError(f"{p['file']}: {len(items)} items, expected {p['qty']}")
+
+        for it in items:
+            verts = objects[it.get("objectid")]
+            tx, ty, tz = (float(v) for v in it.get("transform").split()[-3:])
+            xs = [v[0] + tx for v in verts]
+            ys = [v[1] + ty for v in verts]
+            zs = [v[2] + tz for v in verts]
+            if min(xs) < 0 or max(xs) > PLATE_X or min(ys) < 0 or max(ys) > PLATE_Y:
+                raise ValueError(f"{p['file']}: bin off the {PLATE_X:.0f} x "
+                                 f"{PLATE_Y:.0f} mm plate")
+            if min(zs) < -1e-6 or max(zs) > PLATE_Z:
+                raise ValueError(f"{p['file']}: bin outside the Z envelope")
+
+
+def write_print_list(rows, comps, bin_h, total_g, plates=None):
     """One markdown table telling you exactly what to print."""
     lines = [
         "# Drawer bins — print list",
@@ -262,10 +410,29 @@ def write_print_list(rows, comps, bin_h, total_g):
         f"**Total: {len(rows)} bins from {len(groups)} unique models, "
         f"~{total_g:.0f} g (~{total_g / 1000:.1f} kg) of filament.**",
         "",
-        "Every bin is also exported individually (`bin_A1`, `bin_A2`, …) if you'd "
-        "rather load them all and slice one plate.",
-        "",
     ]
+
+    if plates:
+        lines += [
+            "## Straight into Bambu Studio",
+            "",
+            f"`bambu/` holds one **.3mf per build plate**, already arranged for "
+            f"the **{PRINTER.upper()}** ({PLATE_X:.0f} x {PLATE_Y:.0f} mm). Open "
+            "one, pick your filament, slice, print. No arranging needed.",
+            "",
+            "| Plate file | Holds | Fills |",
+            "|---|---|---|",
+        ]
+        for p in plates:
+            lines.append(f"| `bambu/{p['file']}` | {p['qty']} x `{p['bin']}.stl`"
+                         f"{' (rotated to fit)' if p['rotated'] else ''} "
+                         f"| {', '.join(p['fills'])} |")
+        lines += [
+            "",
+            "Prefer to arrange yourself? Every bin is also exported as its own "
+            "`bin_<id>.stl` and `.step`.",
+            "",
+        ]
     path = os.path.join(OUT_MODELS, "PRINT_LIST.md")
     with open(path, "w") as f:
         f.write("\n".join(lines))
@@ -396,11 +563,19 @@ def render_3d(comps, bins):
 
 
 def main():
+    global PRINTER, PLATE_X, PLATE_Y, PLATE_Z
+
     p = argparse.ArgumentParser(description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--no-render", action="store_true",
                    help="skip the PNG plan (no matplotlib needed)")
+    p.add_argument("--printer", default=PRINTER, choices=sorted(PRINTERS),
+                   help="build plate to arrange the .3mf plates for "
+                        f"(default: {PRINTER})")
     args = p.parse_args()
+
+    PRINTER = args.printer
+    PLATE_X, PLATE_Y, PLATE_Z = PRINTERS[PRINTER]
 
     print(f'Drawer {DRAWER_W}" x {DRAWER_D}" x {DRAWER_H}" deep\n')
     build(args)

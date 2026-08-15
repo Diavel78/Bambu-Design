@@ -160,10 +160,30 @@ Open-top bins that tile the drawer from the sketch — **8 compartments**: four
 ![drawer layout](renders/drawer_layout.png)
 ![bins in place](renders/drawer_bins_3d.png)
 
-**Files:** `models/drawer_boxes/` — one `bin_<id>.stl` + `.step` per bin,
-`drawer_assembly.step` (everything positioned in the drawer), and
-[`PRINT_LIST.md`](models/drawer_boxes/PRINT_LIST.md) with every size and a
-filament estimate.
+### → Import into Bambu Studio
+
+**Open the 4 files in [`models/drawer_boxes/bambu/`](models/drawer_boxes/bambu/).**
+Each one is a `.3mf` with the bins **already arranged on the plate** for the
+H2D — open it, pick your filament, hit Slice. Nothing to position.
+
+| Open this | Prints | Fills |
+|---|---|---|
+| `plate_1_bin_A1_x2.3mf` | 2 big bins | A1, A2 |
+| `plate_2_bin_A1_x2.3mf` | 2 big bins | B1, B2 |
+| `plate_3_bin_C1_x2.3mf` | 2 small bins | C1, C2 |
+| `plate_4_bin_C1_x2.3mf` | 2 small bins | C3, C4 |
+
+Four plates, two bins each. In Bambu Studio: **File → Open Project…** (or just
+drag the `.3mf` onto the window). If it asks, load it as a **project**, not
+geometry only.
+
+> On an X1C / P1S / A1 instead? Re-run with `--printer x1c` (or `p1s`, `a1`,
+> `a1mini`) and it re-arranges the plates for that bed size.
+
+**Other files:** every bin is also exported as its own `bin_<id>.stl` and
+`.step` if you'd rather arrange them by hand, plus `drawer_assembly.step`
+(all 8 positioned in the drawer, for looking at — not for printing) and
+[`PRINT_LIST.md`](models/drawer_boxes/PRINT_LIST.md).
 
 ### Only 2 models to print
 
